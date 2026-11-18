@@ -304,8 +304,8 @@ export default function App() {
                   { id: 'itinerary', label: '每日行程 & 详细交通', icon: BookOpen },
                   { id: 'recommendations', label: '智能推荐景点 (小红书热榜)', icon: Sparkles },
                   { id: 'flights_hotels', label: '航班与酒店住宿', icon: Plane },
-                  { id: 'weather', label: '分天天气与智能建议', icon: CloudSun },
-                  { id: 'expenses', label: '多币种记账与换算', icon: DollarSign },
+                  { id: 'weather', label: '当地天气与智能建议', icon: CloudSun },
+                  { id: 'expenses', label: '旅途记账', icon: DollarSign },
                   { id: 'memories', label: '旅途回忆相册', icon: Camera }
                 ].map(tab => {
                   const Icon = tab.icon;
