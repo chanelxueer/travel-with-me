@@ -1,13 +1,13 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, MapPin, DollarSign, CloudSun, Users, 
   Share2, Plus, Trash2, CheckCircle, Plane, Hotel, 
-  Sparkles, Camera, BookOpen, Clock, Heart, Download, Compass, ChevronRight, ArrowLeft, Navigation, ExternalLink, Edit3, X
+  Sparkles, Camera, BookOpen, Clock, Heart, Download, Compass, ChevronRight, ArrowLeft, Navigation, ExternalLink, Edit3, X, RefreshCw
 } from 'lucide-react';
 
 export default function App() {
   const [trips, setTrips] = useState(() => {
-    const saved = localStorage.getItem('travel_with_me_cloud_v4');
+    const saved = localStorage.getItem('travel_with_me_cloud_v5');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
@@ -22,8 +22,11 @@ export default function App() {
         currency: 'RM',
         companions: 3,
         coverImage: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800',
-        weather: { temp: '6°C', condition: '多云 ☁️', advice: '早晚温差大，建议穿厚羽绒服与防风外套，备好暖贴。' },
-        packingList: ['厚羽绒服', '发热保暖内衣', '防滑雪地靴', '暖贴', '大容量充电宝'],
+        dailyWeather: {
+          'Day 1': { temp: '6°C / 1°C', condition: '多云 ☁️', advice: '抵达东京气温较低，建议出机场前穿好羽绒服，注意保暖。', packing: ['厚羽绒服', '发热保暖内衣', '大容量充电宝'] },
+          'Day 2': { temp: '4°C / -1°C', condition: '小雪 ❄️', advice: '有降雪可能，户外步行地面湿滑，请务必穿防滑雪地靴。', packing: ['防滑雪地靴', '防风手套', '暖贴'] },
+          'Day 3': { temp: '8°C / 2°C', condition: '晴朗 ☀️', advice: '晴空万里，适合登高远眺，阳光下舒适但风较大。', packing: ['太阳镜', '润唇膏', '围巾'] }
+        },
         flights: [
           { id: 'f1', type: '去程', flightNo: 'JL 0724', date: '2026-12-25', time: '09:15 -> 17:30', route: '吉隆坡 (KUL) -> 东京成田 (NRT)' }
         ],
@@ -32,17 +35,18 @@ export default function App() {
         ],
         itinerary: {
           'Day 1': [
-            { id: 'i1', time: '18:00', title: '抵达东京与新宿入住', desc: '入住酒店，和哥斯拉合影。', transport: 'Narita Express', distance: '起点 / 机场至酒店 80km', opening: '全天', mapUrl: 'https://maps.google.com/?q=Shinjuku', photo: '' },
-            { id: 'i2', time: '20:00', title: '思出横丁晚餐', desc: '品尝碳烤串烧。', transport: '步行', distance: '距上一站：步行 5 分钟 (约 400米)', opening: '17:00 - 24:00', mapUrl: 'https://maps.google.com/?q=Omoide+Yokocho', photo: '' }
+            { id: 'i1', time: '18:00', title: '抵达东京与新宿入住', desc: '入住酒店，和哥斯拉合影。', transport: '在机场B1层搭乘 Narita Express (N\'EX) 直达新宿站，出站步行 5 分钟即到酒店。', distance: '起点 / 机场至酒店 80km', opening: '全天', mapUrl: 'https://maps.google.com/?q=Shinjuku', photo: '' },
+            { id: 'i2', time: '20:00', title: '思出横丁晚餐', desc: '品尝碳烤串烧。', transport: '从新宿站西口步行 3 分钟即可到达昭和风情横丁。', distance: '距上一站：步行 5 分钟 (约 400米)', opening: '17:00 - 24:00', mapUrl: 'https://maps.google.com/?q=Omoide+Yokocho', photo: '' }
           ],
           'Day 2': [
-            { id: 'i3', time: '09:30', title: '浅草寺雷门', desc: '参观最古老寺庙。', transport: '地铁大江戸线', distance: '距上一站：地铁 20 分钟', opening: '06:00 - 17:00', mapUrl: 'https://maps.google.com/?q=Senso-ji', photo: '' }
+            { id: 'i3', time: '09:30', title: '浅草寺雷门', desc: '参观最古老寺庙。', transport: '从新宿站乘搭【都营大江戸线】至「大门站」转乘【浅草线】至「浅草站」下车，A4出口步行 2 分钟。', distance: '距上一站：地铁约 25 分钟', opening: '06:00 - 17:00', mapUrl: 'https://maps.google.com/?q=Senso-ji', photo: '' }
           ]
         },
         masterSpots: [
-          { id: 's1', name: '涩谷空中展望台', desc: '俯瞰全球最繁忙十字路口。', img: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600' },
-          { id: 's2', name: '东京晴空塔', desc: '350米高空俯瞰全景雪景。', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600' },
-          { id: 's3', name: '筑地场外市场', desc: '品尝最新鲜的海鲜丼与烤生蚝。', img: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600' }
+          { id: 's1', name: '涩谷空中展望台 (Shibuya Sky)', desc: '俯瞰全球最繁忙十字路口，绝佳日落观赏点。', img: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600', mapUrl: 'https://maps.google.com/?q=Shibuya+Sky', rednoteUrl: 'https://www.xiaohongshu.com/explore/shibuyasky' },
+          { id: 's2', name: '东京晴空塔', desc: '350米高空俯瞰全景雪景。', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600', mapUrl: 'https://maps.google.com/?q=Tokyo+Skytree', rednoteUrl: 'https://www.xiaohongshu.com/explore/skytree' },
+          { id: 's3', name: '筑地场外市场', desc: '品尝最新鲜的海鲜丼与烤生蚝。', img: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', mapUrl: 'https://maps.google.com/?q=Tsukiji+Outer+Market', rednoteUrl: 'https://www.xiaohongshu.com/explore/tsukiji' },
+          { id: 's4', name: '表参道美学街区', desc: '世界级建筑大师打造的时尚购物天堂。', img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600', mapUrl: 'https://maps.google.com/?q=Omotesando', rednoteUrl: 'https://www.xiaohongshu.com/explore/omotesando' }
         ],
         expenses: [
           { id: 'e1', title: '往返机票', amount: 2400, currency: 'MYR', convertedRM: 2400, paidBy: 'Alex', category: '交通' }
@@ -57,14 +61,15 @@ export default function App() {
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [activeTab, setActiveTab] = useState('itinerary');
   const [activeDayTab, setActiveDayTab] = useState('Day 1');
+  const [activeWeatherDay, setActiveWeatherDay] = useState('Day 1');
   const [toast, setToast] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // 弹窗状态控制器 (Popup Modals)
-  const [modalType, setModalType] = useState(null); // 'itinerary', 'expense', 'flight', 'hotel', 'spot', 'editItinerary', 'editExpense'
+  // 弹窗状态控制器
+  const [modalType, setModalType] = useState(null); 
   const [editingItem, setEditingItem] = useState(null);
 
-  // 各类表单数据
+  // 表单数据
   const [itineraryForm, setItineraryForm] = useState({ time: '10:00', title: '', desc: '', transport: '步行', distance: '距上一站：...', opening: '09:00 - 18:00', mapUrl: 'https://maps.google.com/?q=', photo: '' });
   const [expenseForm, setExpenseForm] = useState({ title: '', amount: '', currency: 'MYR', paidBy: '我', category: '餐饮' });
   const [flightForm, setFlightForm] = useState({ type: '去程', flightNo: '', date: '', time: '', route: '' });
@@ -74,7 +79,7 @@ export default function App() {
   const [spotTimeTarget, setSpotTimeTarget] = useState('14:00');
 
   useEffect(() => {
-    localStorage.setItem('travel_with_me_cloud_v4', JSON.stringify(trips));
+    localStorage.setItem('travel_with_me_cloud_v5', JSON.stringify(trips));
     setIsSyncing(true);
     const timer = setTimeout(() => setIsSyncing(false), 500);
     return () => clearTimeout(timer);
@@ -98,9 +103,10 @@ export default function App() {
     return Math.ceil((start - today) / (1000 * 60 * 60 * 24));
   };
 
+  // 动态自动归类：结束日期早于今天算过去，否则算即将来临
   const todayStr = new Date().toISOString().split('T')[0];
-  const upcomingTrips = trips.filter(t => t.startDate >= todayStr);
-  const pastTrips = trips.filter(t => t.startDate < todayStr);
+  const upcomingTrips = trips.filter(t => t.endDate >= todayStr);
+  const pastTrips = trips.filter(t => t.endDate < todayStr);
 
   const confirmAndDelete = (deleteAction, name = '此项') => {
     if (window.confirm(`⚠️ 确定要删除 "${name}" 吗？此操作无法撤销，并会实时同步给所有同行伙伴。`)) {
@@ -109,14 +115,13 @@ export default function App() {
     }
   };
 
-  // 汇率转换计算
   const convertToRM = (amount, currency) => {
     const amt = parseFloat(amount) || 0;
     const rates = { MYR: 1, JPY: 0.029, USD: 4.45, THB: 0.13, EUR: 4.80, SGD: 3.35 };
     return (amt * (rates[currency] || 1)).toFixed(2);
   };
 
-  // 智能推荐景点计算：过滤掉已经在所有行程里出现过的景点
+  // 智能推荐景点：过滤掉已加入行程的景点
   const getSmartRecommendedSpots = () => {
     if (!currentTrip) return [];
     const scheduledTitles = new Set();
@@ -124,6 +129,15 @@ export default function App() {
       dayList.forEach(item => scheduledTitles.add(item.title));
     });
     return (currentTrip.masterSpots || []).filter(s => !scheduledTitles.has(s.name));
+  };
+
+  // 推荐景点 Refresh 功能触发
+  const handleRefreshSpots = () => {
+    if (!currentTrip) return;
+    const shuffled = [...(currentTrip.masterSpots || [])].sort(() => 0.5 - Math.random());
+    const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, masterSpots: shuffled } : t);
+    setTrips(updatedTrips);
+    triggerToast('🔄 已为您换一批智能推荐景点！');
   };
 
   return (
@@ -181,7 +195,7 @@ export default function App() {
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">带着热情与手账，去探索世界吧。</h2>
                 <p className="text-sm text-[#666] mt-2 max-w-xl leading-relaxed">
-                  多端实时同步：与同行伙伴共同规划行程、智能推荐景点、实时多币种记账。
+                  多端实时同步：自动计算出发倒数、智能推荐小红书热门景点、每日独立天气与多币种记账。
                 </p>
               </div>
               <button 
@@ -198,13 +212,14 @@ export default function App() {
                     currency: 'RM',
                     companions: 4,
                     coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800',
-                    weather: { temp: '-5°C', condition: '大雪 ❄️', advice: '极寒天气，务必做好保暖防滑。' },
-                    packingList: ['防寒羽绒服', '雪地靴', '保暖手套', '暖贴'],
+                    dailyWeather: {
+                      'Day 1': { temp: '-5°C', condition: '大雪 ❄️', advice: '极寒天气，务必做好保暖。', packing: ['厚羽绒服', '雪地靴'] }
+                    },
                     flights: [],
                     hotels: [],
-                    itinerary: { 'Day 1': [{ id: 'd1', time: '12:00', title: '抵达札幌', desc: '市区闲逛。', transport: 'JR 机场快线', distance: '机场到市区 50km', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
+                    itinerary: { 'Day 1': [{ id: 'd1', time: '12:00', title: '抵达札幌', desc: '市区闲逛。', transport: '乘搭 JR 机场快线至札幌站下车。', distance: '机场到市区 50km', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
                     masterSpots: [
-                      { id: 'ms1', name: '小樽运河', desc: '浪漫的雪中欧式红砖仓库。', img: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=600' }
+                      { id: 'ms1', name: '小樽运河', desc: '浪漫的雪中欧式红砖仓库。', img: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=600', mapUrl: 'https://maps.google.com', rednoteUrl: 'https://www.xiaohongshu.com' }
                     ],
                     expenses: [],
                     memories: []
@@ -259,11 +274,11 @@ export default function App() {
               )}
             </div>
 
-            {/* 过去的旅程 */}
+            {/* 过去的旅程 (自动根据日期归类) */}
             {pastTrips.length > 0 && (
               <div className="space-y-4 pt-6">
                 <h3 className="text-xl font-bold tracking-tight text-[#1A1817] flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-gray-500" /> 过去的旅程回忆
+                  <Clock className="w-5 h-5 text-gray-500" /> 过去的旅程回忆 (已自动归档)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {pastTrips.map(trip => (
@@ -311,11 +326,11 @@ export default function App() {
               {/* Tabs */}
               <div className="flex gap-3 mt-8 border-b border-[#F2EFE9] pb-4 overflow-x-auto">
                 {[
-                  { id: 'itinerary', label: '每日行程 & 交通', icon: BookOpen },
-                  { id: 'recommendations', label: '智能推荐景点', icon: Sparkles },
+                  { id: 'itinerary', label: '每日行程 & 详细交通', icon: BookOpen },
+                  { id: 'recommendations', label: '智能推荐景点 (小红书热榜)', icon: Sparkles },
                   { id: 'flights_hotels', label: '航班与酒店住宿', icon: Plane },
-                  { id: 'weather', label: '天气与行前指南', icon: CloudSun },
-                  { id: 'expenses', label: '同行多币种记账', icon: DollarSign },
+                  { id: 'weather', label: '分天天气与智能建议', icon: CloudSun },
+                  { id: 'expenses', label: '多币种记账与换算', icon: DollarSign },
                   { id: 'memories', label: '旅途回忆相册', icon: Camera }
                 ].map(tab => {
                   const Icon = tab.icon;
@@ -333,13 +348,13 @@ export default function App() {
                 })}
               </div>
 
-              {/* Tab 1: 行程 & 交通 (含可编辑、添加、二次确认删除) */}
+              {/* Tab 1: 行程 & 详细交通 */}
               {activeTab === 'itinerary' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center flex-wrap gap-4">
                     <div>
-                      <h3 className="text-xl font-bold tracking-tight">每日行程规划与交通、距离导航</h3>
-                      <p className="text-xs text-[#777] mt-0.5">每个景点包含与上一站的距离、Google Maps 链接、独立照片及编辑功能</p>
+                      <h3 className="text-xl font-bold tracking-tight">每日行程规划与详细乘搭路线</h3>
+                      <p className="text-xs text-[#777] mt-0.5">包含精确的换乘路线、步行指南、Google Maps 链接及编辑功能</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -398,7 +413,6 @@ export default function App() {
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              {/* 编辑按钮 */}
                               <button 
                                 onClick={() => {
                                   setEditingItem({ day: activeDayTab, index: idx, ...item });
@@ -410,7 +424,6 @@ export default function App() {
                               >
                                 <Edit3 className="w-4 h-4" />
                               </button>
-                              {/* 二次确认删除按钮 */}
                               <button 
                                 onClick={() => confirmAndDelete(() => {
                                   const updatedDayList = currentTrip.itinerary[activeDayTab].filter((_, i) => i !== idx);
@@ -429,9 +442,9 @@ export default function App() {
                           <p className="text-sm text-[#666] leading-relaxed">{item.desc}</p>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#EFECE6] text-xs text-[#555]">
-                            <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#EFECE6]">
-                              <Navigation className="w-4 h-4 text-amber-600 shrink-0" />
-                              <span><strong>推荐交通:</strong> {item.transport}</span>
+                            <div className="flex items-start gap-2 bg-white p-2.5 rounded-xl border border-[#EFECE6]">
+                              <Navigation className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                              <span><strong>详细交通与换乘路线：</strong> {item.transport}</span>
                             </div>
                             <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#EFECE6]">
                               <div className="flex items-center gap-2 truncate">
@@ -451,7 +464,6 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* 照片展示 */}
                           <div className="pt-2">
                             {item.photo ? (
                               <div className="relative h-40 rounded-2xl overflow-hidden border border-[#EFECE6]">
@@ -488,12 +500,20 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 2: 智能推荐景点 (纯智能推荐，未在已添加行程里，可一键弹窗加入某天) */}
+              {/* Tab 2: 智能推荐景点 (带 Refresh 换一换、Google Maps、小红书链接) */}
               {activeTab === 'recommendations' && (
                 <div className="mt-8 space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold tracking-tight">智能推荐必去景点</h3>
-                    <p className="text-xs text-[#777] mt-0.5">系统自动过滤已安排的景点，点击「一键加入行程」可直接规划到具体天数与时间</p>
+                  <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold tracking-tight">智能推荐必去景点（含小红书热门笔记）</h3>
+                      <p className="text-xs text-[#777] mt-0.5">自动过滤已安排景点，点击「换一换」可刷新更多推荐</p>
+                    </div>
+                    <button 
+                      onClick={handleRefreshSpots}
+                      className="px-4 py-2.5 bg-[#EFECE6] text-[#2C2A29] text-xs font-bold rounded-xl hover:bg-[#E5E0D8] transition flex items-center gap-1.5 shadow-xs"
+                    >
+                      <RefreshCw className="w-4 h-4" /> 换一换 (Refresh)
+                    </button>
                   </div>
 
                   {getSmartRecommendedSpots().length === 0 ? (
@@ -506,12 +526,26 @@ export default function App() {
                       {getSmartRecommendedSpots().map((spot, i) => (
                         <div key={spot.id || i} className="rounded-3xl overflow-hidden border border-[#EFECE6] bg-white shadow-xs flex flex-col justify-between">
                           <div>
-                            <div className="h-44 overflow-hidden">
+                            <div className="h-44 overflow-hidden relative">
                               <img src={spot.img} alt={spot.name} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
                             </div>
                             <div className="p-5 space-y-2">
                               <h4 className="font-bold text-lg text-[#1A1817]">{spot.name}</h4>
                               <p className="text-sm text-[#666] leading-relaxed">{spot.desc}</p>
+                              
+                              {/* 外部链接按钮区 */}
+                              <div className="flex items-center gap-3 pt-2">
+                                {spot.mapUrl && (
+                                  <a href={spot.mapUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#F5F2EB] text-[#333] px-3 py-1.5 rounded-xl font-medium hover:bg-[#EAE5DD] flex items-center gap-1">
+                                    <MapPin className="w-3.5 h-3.5 text-rose-600"/> Google Maps
+                                  </a>
+                                )}
+                                {spot.rednoteUrl && (
+                                  <a href={spot.rednoteUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-medium hover:bg-red-100 flex items-center gap-1">
+                                    📖 小红书攻略
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="p-5 pt-0">
@@ -537,7 +571,6 @@ export default function App() {
               {/* Tab 3: 航班与酒店住宿 */}
               {activeTab === 'flights_hotels' && (
                 <div className="mt-8 space-y-8">
-                  {/* 航班板块 */}
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
@@ -580,7 +613,6 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* 酒店住宿板块 */}
                   <div className="space-y-4 pt-4 border-t border-[#EFECE6]">
                     <div className="flex justify-between items-center">
                       <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
@@ -625,48 +657,78 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 4: 天气与行前指南 (实时对应行程日期、智能推荐物品与穿搭) */}
+              {/* Tab 4: 按天选择的天气与智能建议 */}
               {activeTab === 'weather' && (
                 <div className="mt-8 space-y-6">
-                  <div className="bg-[#FAF8F5] p-8 rounded-3xl border border-[#EFECE6] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div>
-                      <span className="text-xs text-[#888] font-bold uppercase tracking-wider">实时更新：{currentTrip.startDate} 至 {currentTrip.endDate} 预计天气</span>
-                      <div className="text-4xl font-extrabold mt-2 flex items-center gap-4 text-[#1A1817]">
-                        {currentTrip.weather.temp} 
-                        <span className="text-xl font-normal text-[#555]">{currentTrip.weather.condition}</span>
-                      </div>
-                      <p className="text-sm text-[#666] mt-3 max-w-xl leading-relaxed">{currentTrip.weather.advice}</p>
-                    </div>
+                  <div>
+                    <h3 className="text-xl font-bold tracking-tight">每日独立天气与智能穿搭/物品指南</h3>
+                    <p className="text-xs text-[#777] mt-0.5">选择具体的天数，查看当天专属的预计气象与智能打包建议</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="p-6 border border-[#EFECE6] rounded-3xl bg-white shadow-xs space-y-3">
-                      <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">👕 智能穿搭建议</h4>
-                      <p className="text-sm text-[#666] leading-relaxed">
-                        基于目的地当前气温（{currentTrip.weather.temp}），智能建议采用洋葱式穿搭法，外出时内搭发热保暖衣，外穿防风御寒外套，鞋履选择舒适防滑鞋。
-                      </p>
-                    </div>
-                    <div className="p-6 border border-[#EFECE6] rounded-3xl bg-white shadow-xs space-y-3">
-                      <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">🎒 智能行前物品推荐</h4>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {(currentTrip.packingList || ['护照证件', '大容量充电宝', '常备药', '转换插头']).map((item, idx) => (
-                          <span key={idx} className="px-3 py-1.5 bg-[#F5F2EB] text-[#444] text-xs font-semibold rounded-xl border border-[#EFECE6]">
-                            ✓ {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  {/* 选择天数 Tabs */}
+                  <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#EFECE6]">
+                    {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
+                      <button
+                        key={dayKey}
+                        onClick={() => setActiveWeatherDay(dayKey)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+                          activeWeatherDay === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#F5F2EB] text-[#555] hover:bg-[#EAE5DD]'
+                        }`}
+                      >
+                        {dayKey} 天气
+                      </button>
+                    ))}
                   </div>
+
+                  {/* 对应天数的天气大卡片 */}
+                  {(() => {
+                    const dayData = (currentTrip.dailyWeather && currentTrip.dailyWeather[activeWeatherDay]) || {
+                      temp: '10°C / 3°C', condition: '晴间多云 ⛅', advice: '天气晴朗，早晚略有寒意，建议备好防风外套。', packing: ['防风外套', '舒适运动鞋', '充电宝']
+                    };
+                    return (
+                      <div className="space-y-6 animate-fade-in">
+                        <div className="bg-[#FAF8F5] p-8 rounded-3xl border border-[#EFECE6] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                          <div>
+                            <span className="text-xs text-[#888] font-bold uppercase tracking-wider">{activeWeatherDay} 预计气象速览</span>
+                            <div className="text-4xl font-extrabold mt-2 flex items-center gap-4 text-[#1A1817]">
+                              {dayData.temp} 
+                              <span className="text-xl font-normal text-[#555]">{dayData.condition}</span>
+                            </div>
+                            <p className="text-sm text-[#666] mt-3 max-w-xl leading-relaxed">{dayData.advice}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                          <div className="p-6 border border-[#EFECE6] rounded-3xl bg-white shadow-xs space-y-3">
+                            <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">👕 {activeWeatherDay} 智能穿搭建议</h4>
+                            <p className="text-sm text-[#666] leading-relaxed">
+                              根据 {activeWeatherDay} 的气温（{dayData.temp}），建议采用多层穿搭，方便室内外温差调节。鞋履建议选择适合步行的防滑运动鞋。
+                            </p>
+                          </div>
+                          <div className="p-6 border border-[#EFECE6] rounded-3xl bg-white shadow-xs space-y-3">
+                            <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">🎒 {activeWeatherDay} 智能行李物品清单</h4>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {(dayData.packing || ['护照证件', '雨具', '充电宝']).map((item, idx) => (
+                                <span key={idx} className="px-3 py-1.5 bg-[#F5F2EB] text-[#444] text-xs font-semibold rounded-xl border border-[#EFECE6]">
+                                  ✓ {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
-              {/* Tab 5: 记账 (多币种、实时转RM、可编辑、可删除) */}
+              {/* Tab 5: 多币种记账与换算 */}
               {activeTab === 'expenses' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="text-xl font-bold tracking-tight">同行开销分摊（多币种实时换算）</h3>
-                      <p className="text-xs text-[#777] mt-0.5">自动将外币折算为马币（RM）计算总消费</p>
+                      <p className="text-xs text-[#777] mt-0.5">自动将外币折算为马币（RM）计算总消费，支持编辑与删除</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -692,7 +754,6 @@ export default function App() {
                             <span className="font-bold text-base block">{exp.currency || 'MYR'} {exp.amount}</span>
                             <span className="text-xs text-emerald-600 font-medium">≈ RM {exp.convertedRM || convertToRM(exp.amount, exp.currency || 'MYR')}</span>
                           </div>
-                          {/* 编辑账单 */}
                           <button 
                             onClick={() => {
                               setEditingItem({ index: idx, ...exp });
@@ -704,7 +765,6 @@ export default function App() {
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
-                          {/* 二次确认删除 */}
                           <button 
                             onClick={() => confirmAndDelete(() => {
                               const updated = currentTrip.expenses.filter((_, i) => i !== idx);
@@ -767,7 +827,7 @@ export default function App() {
         )}
       </main>
 
-      {/* ================= POPUP MODAL TABLES (弹窗表单表格) ================= */}
+      {/* ================= POPUP MODAL TABLES (弹窗表单) ================= */}
       {modalType && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-[#EFECE6] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-scale-up">
@@ -804,19 +864,19 @@ export default function App() {
                     <label className="text-xs text-[#666] block mb-1">与上一站的距离提示</label>
                     <input type="text" value={itineraryForm.distance} onChange={e => setItineraryForm({...itineraryForm, distance: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="距上一站步行 10 分钟" />
                   </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">详细交通与乘搭路线 (写明搭什么线、怎么走)</label>
+                    <input type="text" value={itineraryForm.transport} onChange={e => setItineraryForm({...itineraryForm, transport: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="乘搭地铁银座线至浅草站下车..." />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">推荐交通</label>
-                      <input type="text" value={itineraryForm.transport} onChange={e => setItineraryForm({...itineraryForm, transport: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="地铁" />
-                    </div>
                     <div>
                       <label className="text-xs text-[#666] block mb-1">开放时间</label>
                       <input type="text" value={itineraryForm.opening} onChange={e => setItineraryForm({...itineraryForm, opening: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="09:00 - 18:00" />
                     </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">Google Maps 链接</label>
-                    <input type="text" value={itineraryForm.mapUrl} onChange={e => setItineraryForm({...itineraryForm, mapUrl: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="https://maps.google.com/?q=..." />
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">Google Maps 链接</label>
+                      <input type="text" value={itineraryForm.mapUrl} onChange={e => setItineraryForm({...itineraryForm, mapUrl: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="https://maps.google.com/?q=..." />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs text-[#666] block mb-1">游玩描述 / 备注</label>
@@ -867,19 +927,19 @@ export default function App() {
                     <label className="text-xs text-[#666] block mb-1">与上一站距离提示</label>
                     <input type="text" value={itineraryForm.distance} onChange={e => setItineraryForm({...itineraryForm, distance: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
                   </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">详细交通与乘搭路线</label>
+                    <input type="text" value={itineraryForm.transport} onChange={e => setItineraryForm({...itineraryForm, transport: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">推荐交通</label>
-                      <input type="text" value={itineraryForm.transport} onChange={e => setItineraryForm({...itineraryForm, transport: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
-                    </div>
                     <div>
                       <label className="text-xs text-[#666] block mb-1">开放时间</label>
                       <input type="text" value={itineraryForm.opening} onChange={e => setItineraryForm({...itineraryForm, opening: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
                     </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">Google Maps 链接</label>
-                    <input type="text" value={itineraryForm.mapUrl} onChange={e => setItineraryForm({...itineraryForm, mapUrl: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">Google Maps 链接</label>
+                      <input type="text" value={itineraryForm.mapUrl} onChange={e => setItineraryForm({...itineraryForm, mapUrl: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs text-[#666] block mb-1">描述</label>
@@ -905,7 +965,7 @@ export default function App() {
               </>
             )}
 
-            {/* 3. 智能推荐景点一键加入弹窗 */}
+            {/* 3. 智能推荐景点加入弹窗 */}
             {modalType === 'scheduleSpot' && spotToSchedule && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -941,10 +1001,10 @@ export default function App() {
                           time: spotTimeTarget,
                           title: spotToSchedule.name,
                           desc: spotToSchedule.desc,
-                          transport: '建议步行或搭乘公共交通',
+                          transport: '建议乘搭公共交通或地铁前往',
                           distance: '距上一站：智能规划中',
-                          opening: '09:00 - 18:00',
-                          mapUrl: `https://maps.google.com/?q=${encodeURIComponent(spotToSchedule.name)}`,
+                          opening: '09:00 - 21:00',
+                          mapUrl: spotToSchedule.mapUrl || 'https://maps.google.com',
                           photo: spotToSchedule.img
                         };
                         const updatedItinerary = {
@@ -1061,7 +1121,7 @@ export default function App() {
               </>
             )}
 
-            {/* 6. 多币种记账弹窗 (添加与编辑) */}
+            {/* 6. 多币种记账弹窗 */}
             {(modalType === 'expense' || modalType === 'editExpense') && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -1090,7 +1150,6 @@ export default function App() {
                       </select>
                     </div>
                   </div>
-                  {/* 实时预览换算结果 */}
                   <div className="p-3 bg-[#FAF8F5] rounded-xl text-xs text-emerald-700 font-medium flex justify-between items-center">
                     <span>实时汇率折算预览：</span>
                     <span className="font-bold text-sm">≈ RM {convertToRM(expenseForm.amount, expenseForm.currency)}</span>
