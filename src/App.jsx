@@ -7,7 +7,7 @@ import {
 
 export default function App() {
   const [trips, setTrips] = useState(() => {
-    const saved = localStorage.getItem('travel_with_me_cloud_v5');
+    const saved = localStorage.getItem('travel_with_me_cloud_v6');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
@@ -43,16 +43,16 @@ export default function App() {
           ]
         },
         masterSpots: [
-          { id: 's1', name: '涩谷空中展望台 (Shibuya Sky)', desc: '俯瞰全球最繁忙十字路口，绝佳日落观赏点。', img: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600', mapUrl: 'https://maps.google.com/?q=Shibuya+Sky', rednoteUrl: 'https://www.xiaohongshu.com/explore/shibuyasky' },
-          { id: 's2', name: '东京晴空塔', desc: '350米高空俯瞰全景雪景。', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600', mapUrl: 'https://maps.google.com/?q=Tokyo+Skytree', rednoteUrl: 'https://www.xiaohongshu.com/explore/skytree' },
-          { id: 's3', name: '筑地场外市场', desc: '品尝最新鲜的海鲜丼与烤生蚝。', img: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', mapUrl: 'https://maps.google.com/?q=Tsukiji+Outer+Market', rednoteUrl: 'https://www.xiaohongshu.com/explore/tsukiji' },
-          { id: 's4', name: '表参道美学街区', desc: '世界级建筑大师打造的时尚购物天堂。', img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600', mapUrl: 'https://maps.google.com/?q=Omotesando', rednoteUrl: 'https://www.xiaohongshu.com/explore/omotesando' }
+          { id: 's1', name: '涩谷空中展望台 (Shibuya Sky)', desc: '俯瞰全球最繁忙十字路口，绝佳日落观赏点。', img: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600', mapUrl: 'https://maps.google.com/?q=Shibuya+Sky', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=Shibuya%20Sky' },
+          { id: 's2', name: '东京晴空塔', desc: '350米高空俯瞰全景雪景。', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600', mapUrl: 'https://maps.google.com/?q=Tokyo+Skytree', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E4%B8%9C%E4%BA%AC%E6%99%B4%E7%A9%BA%E5%A1%94' },
+          { id: 's3', name: '筑地场外市场', desc: '品尝最新鲜的海鲜丼与烤生蚝。', img: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', mapUrl: 'https://maps.google.com/?q=Tsukiji+Outer+Market', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E7%AD%91%E5%9C%B0%E5%9C%BA%E5%A4%96%E5%B8%82%E5%9C%BA' },
+          { id: 's4', name: '表参道美学街区', desc: '世界级建筑大师打造的时尚购物天堂。', img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600', mapUrl: 'https://maps.google.com/?q=Omotesando', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E8%A1%A8%E5%8F%82%E9%81%93' }
         ],
         expenses: [
           { id: 'e1', title: '往返机票', amount: 2400, currency: 'MYR', convertedRM: 2400, paidBy: 'Alex', category: '交通' }
         ],
         memories: [
-          'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600'
+          { id: 'm1', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', date: '2026-12-25', location: '新宿歌舞伎町', comment: '刚到东京的第一顿串烧，氛围感绝了！' }
         ]
       }
     ];
@@ -70,16 +70,18 @@ export default function App() {
   const [editingItem, setEditingItem] = useState(null);
 
   // 表单数据
+  const [newTripForm, setNewTripForm] = useState({ title: '', destination: '日本·东京 (Tokyo)', startDate: '2026-10-01', endDate: '2026-10-05', budget: '5,000', currency: 'RM', companions: 2, coverImage: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800' });
   const [itineraryForm, setItineraryForm] = useState({ time: '10:00', title: '', desc: '', transport: '步行', distance: '距上一站：...', opening: '09:00 - 18:00', mapUrl: 'https://maps.google.com/?q=', photo: '' });
   const [expenseForm, setExpenseForm] = useState({ title: '', amount: '', currency: 'MYR', paidBy: '我', category: '餐饮' });
   const [flightForm, setFlightForm] = useState({ type: '去程', flightNo: '', date: '', time: '', route: '' });
   const [hotelForm, setHotelForm] = useState({ name: '', address: '', checkIn: '', checkOut: '' });
+  const [memoryForm, setMemoryForm] = useState({ url: '', date: new Date().toISOString().split('T')[0], location: '', comment: '' });
   const [spotToSchedule, setSpotToSchedule] = useState(null);
   const [spotDayTarget, setSpotDayTarget] = useState('Day 1');
   const [spotTimeTarget, setSpotTimeTarget] = useState('14:00');
 
   useEffect(() => {
-    localStorage.setItem('travel_with_me_cloud_v5', JSON.stringify(trips));
+    localStorage.setItem('travel_with_me_cloud_v6', JSON.stringify(trips));
     setIsSyncing(true);
     const timer = setTimeout(() => setIsSyncing(false), 500);
     return () => clearTimeout(timer);
@@ -103,7 +105,6 @@ export default function App() {
     return Math.ceil((start - today) / (1000 * 60 * 60 * 24));
   };
 
-  // 动态自动归类：结束日期早于今天算过去，否则算即将来临
   const todayStr = new Date().toISOString().split('T')[0];
   const upcomingTrips = trips.filter(t => t.endDate >= todayStr);
   const pastTrips = trips.filter(t => t.endDate < todayStr);
@@ -121,7 +122,6 @@ export default function App() {
     return (amt * (rates[currency] || 1)).toFixed(2);
   };
 
-  // 智能推荐景点：过滤掉已加入行程的景点
   const getSmartRecommendedSpots = () => {
     if (!currentTrip) return [];
     const scheduledTitles = new Set();
@@ -131,7 +131,6 @@ export default function App() {
     return (currentTrip.masterSpots || []).filter(s => !scheduledTitles.has(s.name));
   };
 
-  // 推荐景点 Refresh 功能触发
   const handleRefreshSpots = () => {
     if (!currentTrip) return;
     const shuffled = [...(currentTrip.masterSpots || [])].sort(() => 0.5 - Math.random());
@@ -200,32 +199,8 @@ export default function App() {
               </div>
               <button 
                 onClick={() => {
-                  const title = prompt('请输入新旅行名称：', '北海道 5天4夜粉雪温泉之旅');
-                  if (!title) return;
-                  const newT = {
-                    id: Date.now().toString(),
-                    title,
-                    destination: '日本·北海道 (Hokkaido)',
-                    startDate: '2027-01-10',
-                    endDate: '2027-01-15',
-                    budget: '8,000',
-                    currency: 'RM',
-                    companions: 4,
-                    coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800',
-                    dailyWeather: {
-                      'Day 1': { temp: '-5°C', condition: '大雪 ❄️', advice: '极寒天气，务必做好保暖。', packing: ['厚羽绒服', '雪地靴'] }
-                    },
-                    flights: [],
-                    hotels: [],
-                    itinerary: { 'Day 1': [{ id: 'd1', time: '12:00', title: '抵达札幌', desc: '市区闲逛。', transport: '乘搭 JR 机场快线至札幌站下车。', distance: '机场到市区 50km', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
-                    masterSpots: [
-                      { id: 'ms1', name: '小樽运河', desc: '浪漫的雪中欧式红砖仓库。', img: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=600', mapUrl: 'https://maps.google.com', rednoteUrl: 'https://www.xiaohongshu.com' }
-                    ],
-                    expenses: [],
-                    memories: []
-                  };
-                  setTrips([newT, ...trips]);
-                  triggerToast('✨ 成功创建新旅程！');
+                  setNewTripForm({ title: '', destination: '日本·北海道 (Hokkaido)', startDate: '2027-01-10', endDate: '2027-01-15', budget: '8,000', currency: 'RM', companions: 4, coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' });
+                  setModalType('newTrip');
                 }}
                 className="px-6 py-3.5 bg-[#2C2A29] text-[#FDFBF7] text-sm rounded-2xl font-bold hover:bg-[#444] transition shadow-md flex items-center gap-2 whitespace-nowrap"
               >
@@ -233,7 +208,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* 即将来临的旅行计划 (按要求：目的地、日期、倒数) */}
+            {/* 即将来临的旅行计划 */}
             <div className="space-y-4">
               <h3 className="text-xl font-bold tracking-tight text-[#1A1817] flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-amber-600" /> 即将来临的旅行计划
@@ -274,7 +249,7 @@ export default function App() {
               )}
             </div>
 
-            {/* 过去的旅程 (自动根据日期归类) */}
+            {/* 过去的旅程 */}
             {pastTrips.length > 0 && (
               <div className="space-y-4 pt-6">
                 <h3 className="text-xl font-bold tracking-tight text-[#1A1817] flex items-center gap-2">
@@ -368,7 +343,6 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Day 子 Tabs */}
                   <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#EFECE6] items-center justify-between">
                     <div className="flex gap-2">
                       {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
@@ -399,7 +373,6 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* 当天行程卡片列表 */}
                   <div className="space-y-4 pt-2">
                     {(!currentTrip.itinerary[activeDayTab] || currentTrip.itinerary[activeDayTab].length === 0) ? (
                       <p className="text-sm text-[#888] bg-[#FAF8F5] p-8 rounded-2xl text-center border border-[#EFECE6]">这一天还没有添加行程，点击上方按钮或从智能推荐中加入吧！</p>
@@ -500,7 +473,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 2: 智能推荐景点 (带 Refresh 换一换、Google Maps、小红书链接) */}
+              {/* Tab 2: 智能推荐景点 (小红书链接修复可点击) */}
               {activeTab === 'recommendations' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center flex-wrap gap-4">
@@ -533,7 +506,6 @@ export default function App() {
                               <h4 className="font-bold text-lg text-[#1A1817]">{spot.name}</h4>
                               <p className="text-sm text-[#666] leading-relaxed">{spot.desc}</p>
                               
-                              {/* 外部链接按钮区 */}
                               <div className="flex items-center gap-3 pt-2">
                                 {spot.mapUrl && (
                                   <a href={spot.mapUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#F5F2EB] text-[#333] px-3 py-1.5 rounded-xl font-medium hover:bg-[#EAE5DD] flex items-center gap-1">
@@ -662,10 +634,9 @@ export default function App() {
                 <div className="mt-8 space-y-6">
                   <div>
                     <h3 className="text-xl font-bold tracking-tight">每日独立天气与智能穿搭/物品指南</h3>
-                    <p className="text-xs text-[#777] mt-0.5">选择具体的天数，查看当天专属的预计气象与智能打包建议</p>
+                    <p className="text-xs text-[#777] mt-0.5">选择具体的天数，查看当天专属的预计气象与智能打包建议（系统根据行程季节自动匹配生成）</p>
                   </div>
 
-                  {/* 选择天数 Tabs */}
                   <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#EFECE6]">
                     {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
                       <button
@@ -680,7 +651,6 @@ export default function App() {
                     ))}
                   </div>
 
-                  {/* 对应天数的天气大卡片 */}
                   {(() => {
                     const dayData = (currentTrip.dailyWeather && currentTrip.dailyWeather[activeWeatherDay]) || {
                       temp: '10°C / 3°C', condition: '晴间多云 ⛅', advice: '天气晴朗，早晚略有寒意，建议备好防风外套。', packing: ['防风外套', '舒适运动鞋', '充电宝']
@@ -782,40 +752,59 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 6: 相册 */}
+              {/* Tab 6: 旅途回忆相册 (日期、地点、Comment、杂志拍立得精美排版) */}
               {activeTab === 'memories' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-bold tracking-tight">旅途回忆相册</h3>
+                    <div>
+                      <h3 className="text-xl font-bold tracking-tight">旅途回忆相册</h3>
+                      <p className="text-xs text-[#777] mt-0.5">记录大家的精彩瞬间、拍摄日期、地点与心情感悟</p>
+                    </div>
                     <button 
                       onClick={() => {
-                        const imgUrl = prompt('请输入照片图片链接 (URL):', 'https://images.unsplash.com/photo-...');
-                        if (!imgUrl) return;
-                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, memories: [...t.memories, imgUrl] } : t);
-                        setTrips(updated);
-                        triggerToast('📸 照片已成功上传！');
+                        setMemoryForm({ url: '', date: new Date().toISOString().split('T')[0], location: '', comment: '' });
+                        setModalType('memory');
                       }}
                       className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium"
                     >
-                      + 上传照片
+                      + 上传回忆照片
                     </button>
                   </div>
-                  {currentTrip.memories.length === 0 ? (
-                    <p className="text-sm text-[#888] text-center py-12">暂无照片</p>
+
+                  {(!currentTrip.memories || currentTrip.memories.length === 0) ? (
+                    <div className="text-center py-16 bg-[#FAF8F5] rounded-3xl border border-[#EFECE6] text-[#888]">
+                      <Camera className="w-10 h-10 mx-auto mb-2 opacity-40 text-[#555]" />
+                      <p className="text-sm font-medium">暂无回忆照片，点击上方按钮添加第一张精彩瞬间吧！</p>
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {currentTrip.memories.map((url, i) => (
-                        <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-[#EFECE6] relative group">
-                          <img src={url} alt="memory" className="w-full h-full object-cover" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                      {currentTrip.memories.map((m, i) => (
+                        <div key={m.id || i} className="bg-white p-4 rounded-3xl border border-[#EFECE6] shadow-xs hover:shadow-md transition flex flex-col justify-between group relative">
+                          {/* 删除按钮 */}
                           <button 
                             onClick={() => confirmAndDelete(() => {
                               const updatedMemories = currentTrip.memories.filter((_, idx) => idx !== i);
                               setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, memories: updatedMemories } : t));
                             }, '这张照片')}
-                            className="absolute top-2 right-2 bg-black/60 text-white p-2 rounded-xl hover:bg-red-600 transition"
+                            className="absolute top-6 right-6 z-10 bg-black/60 text-white p-2 rounded-xl hover:bg-red-600 transition opacity-0 group-hover:opacity-100"
+                            title="删除照片"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
+
+                          <div className="aspect-4/3 rounded-2xl overflow-hidden bg-gray-100 mb-4">
+                            <img src={m.url || m} alt="memory" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          </div>
+
+                          <div className="space-y-2 px-1">
+                            <div className="flex justify-between items-center text-xs text-[#888]">
+                              <span className="flex items-center gap-1 font-medium"><MapPin className="w-3 h-3 text-rose-600"/> {m.location || '未知地点'}</span>
+                              <span>{m.date || '旅行途中'}</span>
+                            </div>
+                            <p className="text-sm text-[#2C2A29] font-medium leading-relaxed italic bg-[#FDFBF7] p-3 rounded-2xl border border-[#EFECE6]">
+                              "{m.comment || '美好而难忘的瞬间。'}"
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -827,12 +816,100 @@ export default function App() {
         )}
       </main>
 
-      {/* ================= POPUP MODAL TABLES (弹窗表单) ================= */}
+      {/* ================= POPUP MODAL TABLES (弹窗表单表格) ================= */}
       {modalType && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-[#EFECE6] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-scale-up">
             
-            {/* 1. 添加行程弹窗 */}
+            {/* 1. 主页创建新旅程弹窗 (Popup Table) */}
+            {modalType === 'newTrip' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
+                  <h3 className="font-bold text-lg">✨ 创建新旅程计划</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">旅行标题名称</label>
+                    <input type="text" value={newTripForm.title} onChange={e => setNewTripForm({...newTripForm, title: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="例如：北欧 7天6夜极光之旅" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">目的地</label>
+                    <input type="text" value={newTripForm.destination} onChange={e => setNewTripForm({...newTripForm, destination: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="挪威·特罗姆瑟 (Tromso)" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">开始日期</label>
+                      <input type="date" value={newTripForm.startDate} onChange={e => setNewTripForm({...newTripForm, startDate: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">结束日期</label>
+                      <input type="date" value={newTripForm.endDate} onChange={e => setNewTripForm({...newTripForm, endDate: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">总预算</label>
+                      <input type="text" value={newTripForm.budget} onChange={e => setNewTripForm({...newTripForm, budget: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="10000" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">币种</label>
+                      <select value={newTripForm.currency} onChange={e => setNewTripForm({...newTripForm, currency: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm font-bold">
+                        <option value="RM">RM</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">同行人数</label>
+                      <input type="number" value={newTripForm.companions} onChange={e => setNewTripForm({...newTripForm, companions: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">封面图片链接 (URL)</label>
+                    <input type="text" value={newTripForm.coverImage} onChange={e => setNewTripForm({...newTripForm, coverImage: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="https://images.unsplash.com/photo-..." />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!newTripForm.title) { alert('请填写旅行标题'); return; }
+                        const newT = {
+                          id: Date.now().toString(),
+                          title: newTripForm.title,
+                          destination: newTripForm.destination,
+                          startDate: newTripForm.startDate,
+                          endDate: newTripForm.endDate,
+                          budget: newTripForm.budget,
+                          currency: newTripForm.currency,
+                          companions: parseInt(newTripForm.companions) || 1,
+                          coverImage: newTripForm.coverImage,
+                          dailyWeather: {
+                            'Day 1': { temp: '-2°C', condition: '晴朗 ☀️', advice: '气候寒冷，注意保暖。', packing: ['羽绒服', '暖贴'] }
+                          },
+                          flights: [],
+                          hotels: [],
+                          itinerary: { 'Day 1': [{ id: 'd1', time: '14:00', title: '抵达与酒店入住', desc: '休整并熟悉周边环境。', transport: '机场巴士', distance: '市区', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
+                          masterSpots: [
+                            { id: 'ms1', name: '极光观测点', desc: '绝佳北极光欣赏地。', img: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600', mapUrl: 'https://maps.google.com', rednoteUrl: 'https://www.xiaohongshu.com' }
+                          ],
+                          expenses: [],
+                          memories: []
+                        };
+                        setTrips([newT, ...trips]);
+                        setModalType(null);
+                        triggerToast('✨ 新旅程创建成功！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      立即创建
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 2. 添加行程弹窗 */}
             {modalType === 'itinerary' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -905,7 +982,7 @@ export default function App() {
               </>
             )}
 
-            {/* 2. 编辑行程弹窗 */}
+            {/* 3. 编辑行程弹窗 */}
             {modalType === 'editItinerary' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -965,7 +1042,7 @@ export default function App() {
               </>
             )}
 
-            {/* 3. 智能推荐景点加入弹窗 */}
+            {/* 4. 智能推荐景点加入弹窗 */}
             {modalType === 'scheduleSpot' && spotToSchedule && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -1024,7 +1101,7 @@ export default function App() {
               </>
             )}
 
-            {/* 4. 添加航班弹窗 */}
+            {/* 5. 添加航班弹窗 */}
             {modalType === 'flight' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -1076,7 +1153,7 @@ export default function App() {
               </>
             )}
 
-            {/* 5. 添加酒店弹窗 */}
+            {/* 6. 添加酒店弹窗 */}
             {modalType === 'hotel' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -1121,7 +1198,7 @@ export default function App() {
               </>
             )}
 
-            {/* 6. 多币种记账弹窗 */}
+            {/* 7. 多币种记账弹窗 */}
             {(modalType === 'expense' || modalType === 'editExpense') && (
               <>
                 <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
@@ -1193,6 +1270,52 @@ export default function App() {
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
                       {modalType === 'expense' ? '确认记账' : '保存修改'}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 8. 上传回忆相册弹窗 (含日期、地点、Comment) */}
+            {modalType === 'memory' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#F2EFE9] pb-4">
+                  <h3 className="font-bold text-lg">📸 上传旅途回忆照片</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">照片图片链接 (URL)</label>
+                    <input type="text" value={memoryForm.url} onChange={e => setMemoryForm({...memoryForm, url: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="https://images.unsplash.com/photo-..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">拍摄日期</label>
+                      <input type="date" value={memoryForm.date} onChange={e => setMemoryForm({...memoryForm, date: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">拍摄地点</label>
+                      <input type="text" value={memoryForm.location} onChange={e => setMemoryForm({...memoryForm, location: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="例如：浅草寺雷门" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">心情评论 / 备注 (Comment)</label>
+                    <textarea value={memoryForm.comment} onChange={e => setMemoryForm({...memoryForm, comment: e.target.value})} className="w-full p-3 border border-[#EFECE6] rounded-xl text-sm" placeholder="写下当时的心情或故事..." />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!memoryForm.url) { alert('请填写照片链接'); return; }
+                        const newMem = { id: Date.now().toString(), ...memoryForm };
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, memories: [newMem, ...t.memories] } : t);
+                        setTrips(updated);
+                        setModalType(null);
+                        triggerToast('📸 回忆相片上传成功！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      保存相片
                     </button>
                   </div>
                 </div>
