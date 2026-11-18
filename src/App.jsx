@@ -7,7 +7,7 @@ import {
 
 export default function App() {
   const [trips, setTrips] = useState(() => {
-    const saved = localStorage.getItem('travel_with_me_cloud_v13');
+    const saved = localStorage.getItem('travel_with_me_cloud_v14');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
@@ -44,13 +44,10 @@ export default function App() {
         },
         masterSpots: [
           { id: 's1', name: '涩谷空中展望台 (Shibuya Sky)', desc: '俯瞰全球最繁忙十字路口，绝佳日落观赏点。', img: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600', mapUrl: 'https://maps.google.com/?q=Shibuya+Sky', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=Shibuya%20Sky' },
-          { id: 's2', name: '东京晴空塔', desc: '350米高空俯瞰全景雪景。', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600', mapUrl: 'https://maps.google.com/?q=Tokyo+Skytree', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E4%B8%9C%E4%BA%AC%E6%99%B4%E7%A9%BA%E5%A1%94' },
-          { id: 's3', name: '筑地场外市场', desc: '品尝最新鲜的海鲜丼与烤生蚝。', img: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', mapUrl: 'https://maps.google.com/?q=Tsukiji+Outer+Market', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E7%AD%91%E5%9C%B0%E5%9C%BA%E5%A4%96%E5%B8%82%E5%B8%82%E5%9C%BA' },
-          { id: 's4', name: '表参道美学街区', desc: '世界级建筑大师打造的时尚购物天堂。', img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600', mapUrl: 'https://maps.google.com/?q=Omotesando', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E8%A1%A8%E5%8F%82%E9%81%93' }
+          { id: 's2', name: '东京晴空塔', desc: '350米高空俯瞰全景雪景。', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600', mapUrl: 'https://maps.google.com/?q=Tokyo+Skytree', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E4%B8%9C%E4%BA%AC%E6%99%B4%E7%A9%BA%E5%A1%94' }
         ],
         expenses: [
-          { id: 'e1', title: '往返机票', amount: 2400, currency: 'MYR', convertedRM: 2400, paidBy: 'Alex', splitMode: 'equal', splitAmong: ['我', 'Alex', 'Sarah'], customShares: {}, category: '交通' },
-          { id: 'e2', title: '居酒屋晚餐', amount: 12000, currency: 'JPY', convertedRM: 348, paidBy: '我', splitMode: 'equal', splitAmong: ['我', 'Alex'], customShares: {}, category: '餐饮' }
+          { id: 'e1', title: '往返机票', amount: 2400, currency: 'MYR', convertedRM: 2400, paidBy: 'Alex', splitMode: 'equal', splitAmong: ['我', 'Alex', 'Sarah'], customShares: {}, category: '交通' }
         ],
         memories: [
           { id: 'm1', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', date: '2026-12-25', location: '新宿歌舞伎町', comment: '刚到东京的第一顿串烧，氛围感绝了！' }
@@ -73,26 +70,14 @@ export default function App() {
   // 表单数据
   const [newTripForm, setNewTripForm] = useState({ title: '', destination: '日本·北海道 (Hokkaido)', startDate: '2027-01-10', endDate: '2027-01-15', currency: 'RM', companions: 3, companionNames: ['我', 'Alex', 'Sarah'], coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' });
   const [itineraryForm, setItineraryForm] = useState({ time: '10:00', title: '', desc: '', transport: '步行', distance: '距上一站：...', opening: '09:00 - 18:00', mapUrl: 'https://maps.google.com/?q=', photo: '' });
-  
-  // 记账表单 (支持高级分摊)
-  const [expenseForm, setExpenseForm] = useState({ 
-    title: '', 
-    amount: '', 
-    currency: 'MYR', 
-    paidBy: '我', 
-    category: '餐饮',
-    splitMode: 'equal', // 'equal' (平均分摊) 或 'custom' (自定义金额)
-    splitAmong: ['我', 'Alex', 'Sarah'], // 参与分摊的人员名单
-    customShares: {} // { '我': 100, 'Alex': 200 } 自定义各自承担数额
-  });
-
+  const [expenseForm, setExpenseForm] = useState({ title: '', amount: '', currency: 'MYR', paidBy: '我', category: '餐饮', splitMode: 'equal', splitAmong: ['我', 'Alex', 'Sarah'], customShares: {} });
   const [flightForm, setFlightForm] = useState({ type: '去程', flightNo: '', date: '', time: '', route: '' });
   const [hotelForm, setHotelForm] = useState({ name: '', address: '', checkIn: '', checkOut: '' });
   const [memoryForm, setMemoryForm] = useState({ url: '', date: new Date().toISOString().split('T')[0], location: '', comment: '' });
   const [spotPhotoForm, setSpotPhotoForm] = useState({ url: '' });
 
   useEffect(() => {
-    localStorage.setItem('travel_with_me_cloud_v13', JSON.stringify(trips));
+    localStorage.setItem('travel_with_me_cloud_v14', JSON.stringify(trips));
     setIsSyncing(true);
     const timer = setTimeout(() => setIsSyncing(false), 500);
     return () => clearTimeout(timer);
@@ -153,20 +138,24 @@ export default function App() {
     return (currentTrip.masterSpots || []).filter(s => !scheduledTitles.has(s.name));
   };
 
-  // 核心：高级 AA 制清算对账算法（支持部分人分摊、平均分摊、自定义数额）
+  const handleRefreshSpots = () => {
+    if (!currentTrip) return;
+    const shuffled = [...(currentTrip.masterSpots || [])].sort(() => 0.5 - Math.random());
+    const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, masterSpots: shuffled } : t);
+    setTrips(updatedTrips);
+    triggerToast('🔄 已为您换一批智能推荐景点！');
+  };
+
+  // AA 清算逻辑
   const calculateAAClearance = () => {
-    if (!currentTrip || !currentTrip.expenses || currentTrip.expenses.length === 0) return { transactions: [], totalSpent: '0.00', memberOwes: {} };
+    if (!currentTrip || !currentTrip.expenses || currentTrip.expenses.length === 0) return { transactions: [], totalSpent: '0.00' };
     
     let totalSpent = 0;
-    const paidMap = {}; // 谁实际垫付了多少
-    const shareMap = {}; // 谁理应承担多少（负债累积）
-
-    // 获取同行成员列表（默认从 trip 中取，如果没有则自动推导）
+    const paidMap = {};
+    const shareMap = {};
     const members = currentTrip.companionNames || ['我', 'Alex', 'Sarah'];
-    members.forEach(m => {
-      paidMap[m] = 0;
-      shareMap[m] = 0;
-    });
+    
+    members.forEach(m => { paidMap[m] = 0; shareMap[m] = 0; });
 
     currentTrip.expenses.forEach(exp => {
       const val = parseFloat(exp.convertedRM || convertToRM(exp.amount, exp.currency));
@@ -175,7 +164,6 @@ export default function App() {
       if (paidMap[payer] !== undefined) paidMap[payer] += val;
       else paidMap[payer] = val;
 
-      // 分摊逻辑
       const splitMode = exp.splitMode || 'equal';
       const splitAmong = exp.splitAmong && exp.splitAmong.length > 0 ? exp.splitAmong : members;
 
@@ -185,7 +173,7 @@ export default function App() {
           if (shareMap[person] !== undefined) shareMap[person] += sharePerPerson;
           else shareMap[person] = sharePerPerson;
         });
-      } else if (splitMode === 'custom') {
+      } else {
         const customShares = exp.customShares || {};
         let customTotal = 0;
         splitAmong.forEach(person => {
@@ -194,57 +182,40 @@ export default function App() {
           if (shareMap[person] !== undefined) shareMap[person] += sVal;
           else shareMap[person] = sVal;
         });
-        // 如果自定义总和跟总额有出入，多退少补平均分摊余数
         if (Math.abs(customTotal - val) > 0.01 && splitAmong.length > 0) {
           const diff = (val - customTotal) / splitAmong.length;
-          splitAmong.forEach(person => {
-            shareMap[person] += diff;
-          });
+          splitAmong.forEach(person => { shareMap[person] += diff; });
         }
       }
     });
 
-    // 计算每个人净余额：净收支 = 已付款 - 应承担分摊
     const balances = {};
     const allNames = new Set([...Object.keys(paidMap), ...Object.keys(shareMap), ...members]);
-    
     allNames.forEach(name => {
-      const paid = paidMap[name] || 0;
-      const share = shareMap[name] || 0;
-      balances[name] = paid - share;
+      balances[name] = (paidMap[name] || 0) - (shareMap[name] || 0);
     });
 
-    const debtors = []; // 负数（欠钱的人）
-    const creditors = []; // 正数（应收钱的人）
-
+    const debtors = [];
+    const creditors = [];
     Object.entries(balances).forEach(([person, bal]) => {
       if (bal < -0.01) debtors.push({ name: person, amount: Math.abs(bal) });
       else if (bal > 0.01) creditors.push({ name: person, amount: bal });
     });
 
     const transactions = [];
-    let dIdx = 0;
-    let cIdx = 0;
-
+    let dIdx = 0, cIdx = 0;
     while (dIdx < debtors.length && cIdx < creditors.length) {
       const debtor = debtors[dIdx];
       const creditor = creditors[cIdx];
       const transferAmt = Math.min(debtor.amount, creditor.amount);
-
-      transactions.push({
-        from: debtor.name,
-        to: creditor.name,
-        amount: transferAmt.toFixed(2)
-      });
-
+      transactions.push({ from: debtor.name, to: creditor.name, amount: transferAmt.toFixed(2) });
       debtor.amount -= transferAmt;
       creditor.amount -= transferAmt;
-
       if (debtor.amount < 0.01) dIdx++;
       if (creditor.amount < 0.01) cIdx++;
     }
 
-    return { transactions, totalSpent: totalSpent.toFixed(2), paidMap, shareMap };
+    return { transactions, totalSpent: totalSpent.toFixed(2) };
   };
 
   return (
@@ -300,9 +271,9 @@ export default function App() {
                 <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2DCD2] text-[#444] text-xs font-semibold mb-3">
                   ✨ 实时协同旅行手账
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">带着热情与手账，去探索世界吧。</h2>
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">下一站：去哪？</h2>
                 <p className="text-sm text-[#666] mt-2 max-w-xl leading-relaxed">
-                  多端实时同步：自动计算出发倒数、智能推荐小红书热门景点、多币种高级 AA 记账与结账清算。
+                  多端实时同步：自动计算出发倒数、智能推荐小红书热门景点、航班酒店住宿、每日天气与高级 AA 记账清算。
                 </p>
               </div>
               <button 
@@ -366,6 +337,7 @@ export default function App() {
                     {currentTrip.destination}
                   </span>
                   
+                  {/* 可编辑的行程大标题 */}
                   <div className="flex items-center gap-3">
                     <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">{currentTrip.title}</h2>
                     <button 
@@ -399,8 +371,8 @@ export default function App() {
                   { id: 'itinerary', label: '每日行程 & 详细交通', icon: BookOpen },
                   { id: 'recommendations', label: '智能推荐景点 (小红书热榜)', icon: Sparkles },
                   { id: 'flights_hotels', label: '航班与酒店住宿', icon: Plane },
-                  { id: 'weather', label: '分天天气与智能建议', icon: CloudSun },
-                  { id: 'expenses', label: '多币种记账与高级AA清算', icon: DollarSign },
+                  { id: 'weather', label: '当地天气与智能建议', icon: CloudSun },
+                  { id: 'expenses', label: '旅途账单', icon: DollarSign },
                   { id: 'memories', label: '旅途回忆相册', icon: Camera }
                 ].map(tab => {
                   const Icon = tab.icon;
@@ -418,13 +390,13 @@ export default function App() {
                 })}
               </div>
 
-              {/* Tab 1: 行程 */}
+              {/* Tab 1: 每日行程 & 交通 & Google Maps 链接 */}
               {activeTab === 'itinerary' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center flex-wrap gap-4">
                     <div>
-                      <h3 className="text-xl font-bold tracking-tight">每日行程规划与详细乘搭路线</h3>
-                      <p className="text-xs text-[#777] mt-0.5">包含精确的换乘路线、步行指南、Google Maps 链接及景点照片上传</p>
+                      <h3 className="text-xl font-bold tracking-tight">每日行程规划、详细交通与 Google Maps</h3>
+                      <p className="text-xs text-[#777] mt-0.5">包含换乘路线、与上一站距离、Google Maps 导航及照片上传</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -438,18 +410,34 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC] items-center">
-                    {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
-                      <button
-                        key={dayKey}
-                        onClick={() => setActiveDayTab(dayKey)}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
-                          activeDayTab === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D4CCE0]'
-                        }`}
-                      >
-                        {dayKey}
-                      </button>
-                    ))}
+                  <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC] items-center justify-between">
+                    <div className="flex gap-2">
+                      {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
+                        <button
+                          key={dayKey}
+                          onClick={() => setActiveDayTab(dayKey)}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+                            activeDayTab === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D4CCE0]'
+                          }`}
+                        >
+                          {dayKey}
+                        </button>
+                      ))}
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const newDayName = prompt('请输入新天数名称（例如：Day 4）：', `Day ${Object.keys(currentTrip.itinerary).length + 1}`);
+                        if (!newDayName) return;
+                        if (currentTrip.itinerary[newDayName]) { alert('该天数已存在'); return; }
+                        const updatedItinerary = { ...currentTrip.itinerary, [newDayName]: [] };
+                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t));
+                        setActiveDayTab(newDayName);
+                        triggerToast('📅 成功添加新的一天！');
+                      }}
+                      className="text-xs bg-[#E2DCD2] text-[#2C2A29] px-3 py-2 rounded-xl font-medium hover:bg-[#D4CCE0]"
+                    >
+                      + 新增一天
+                    </button>
                   </div>
 
                   <div className="space-y-4 pt-2">
@@ -473,12 +461,38 @@ export default function App() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                          <h4 className="font-bold text-lg text-[#1A1817]">{item.title}</h4>
-                          <p className="text-sm text-[#666]">{item.desc}</p>
 
+                          <h4 className="font-bold text-lg text-[#1A1817]">{item.title}</h4>
+                          <p className="text-sm text-[#666] leading-relaxed">{item.desc}</p>
+
+                          {/* 详细交通、距离提示与 Google Maps 链接恢复 */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#DCD6CC] text-xs text-[#555]">
+                            <div className="flex items-start gap-2 bg-white p-2.5 rounded-xl border border-[#DCD6CC]">
+                              <Navigation className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                              <span><strong>交通与换乘路线：</strong> {item.transport}</span>
+                            </div>
+                            <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#DCD6CC]">
+                              <div className="flex items-center gap-2 truncate">
+                                <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
+                                <span className="truncate"><strong>距离提示：</strong> {item.distance}</span>
+                              </div>
+                              {item.mapUrl && (
+                                <a 
+                                  href={item.mapUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline flex items-center gap-1 font-bold shrink-0 ml-2"
+                                >
+                                  Google Maps <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 景点照片上传 */}
                           <div className="pt-2">
                             {item.photo ? (
-                              <div className="relative h-44 rounded-2xl overflow-hidden border border-[#DCD6CC] group/photo">
+                              <div className="relative h-44 rounded-2xl overflow-hidden border border-[#DCD6CC]">
                                 <img src={item.photo} alt={item.title} className="w-full h-full object-cover" />
                                 <button 
                                   onClick={() => {
@@ -511,10 +525,22 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 2: 推荐景点 */}
+              {/* Tab 2: 智能推荐景点 & Google Maps */}
               {activeTab === 'recommendations' && (
                 <div className="mt-8 space-y-6">
-                  <h3 className="text-xl font-bold tracking-tight">智能推荐必去景点（含小红书热门笔记）</h3>
+                  <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold tracking-tight">智能推荐必去景点（含 Google Maps 与小红书热榜）</h3>
+                      <p className="text-xs text-[#777] mt-0.5">点击 Google Maps 随时导航，或一键加入您的每日行程</p>
+                    </div>
+                    <button 
+                      onClick={handleRefreshSpots}
+                      className="px-4 py-2.5 bg-[#E2DCD2] text-[#2C2A29] text-xs font-bold rounded-xl hover:bg-[#D4CCE0] transition flex items-center gap-1.5 shadow-xs"
+                    >
+                      <RefreshCw className="w-4 h-4" /> 换一换
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {getSmartRecommendedSpots().map((spot, i) => (
                       <div key={spot.id || i} className="rounded-3xl overflow-hidden border border-[#DCD6CC] bg-white shadow-xs flex flex-col justify-between">
@@ -525,7 +551,13 @@ export default function App() {
                           <div className="p-5 space-y-2">
                             <h4 className="font-bold text-lg text-[#1A1817]">{spot.name}</h4>
                             <p className="text-sm text-[#666]">{spot.desc}</p>
+                            
                             <div className="flex items-center gap-3 pt-2">
+                              {spot.mapUrl && (
+                                <a href={spot.mapUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#ECE7DF] text-[#333] px-3 py-1.5 rounded-xl font-medium hover:bg-[#E2DCD2] flex items-center gap-1">
+                                  <MapPin className="w-3.5 h-3.5 text-rose-600"/> Google Maps
+                                </a>
+                              )}
                               {spot.rednoteUrl && (
                                 <a href={spot.rednoteUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-medium hover:bg-red-100 flex items-center gap-1">
                                   📖 小红书攻略
@@ -540,7 +572,159 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 5: 记账与高级 AA 清算结算计算器 */}
+              {/* Tab 3: 航班与酒店住宿恢复 */}
+              {activeTab === 'flights_hotels' && (
+                <div className="mt-8 space-y-8">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
+                        <Plane className="w-5 h-5 text-indigo-600" /> 航班信息
+                      </h3>
+                      <button 
+                        onClick={() => {
+                          setFlightForm({ type: '去程', flightNo: '', date: '', time: '', route: '' });
+                          setModalType('flight');
+                        }}
+                        className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium"
+                      >
+                        + 添加航班
+                      </button>
+                    </div>
+
+                    {(!currentTrip.flights || currentTrip.flights.length === 0) ? (
+                      <p className="text-sm text-[#888] bg-[#ECE7DF] p-5 rounded-2xl border border-[#DCD6CC]">暂无航班记录</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {currentTrip.flights.map((f, i) => (
+                          <div key={f.id || i} className="p-5 rounded-2xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-2 relative">
+                            <div className="flex justify-between font-bold text-sm">
+                              <span>{f.type}：{f.flightNo}</span>
+                              <button 
+                                onClick={() => confirmAndDelete(() => {
+                                  const updated = currentTrip.flights.filter((_, idx) => idx !== i);
+                                  setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, flights: updated } : t));
+                                }, f.flightNo)}
+                                className="text-gray-400 hover:text-red-500"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <p className="text-sm font-semibold text-[#1A1817]">{f.route}</p>
+                            <p className="text-xs text-[#666]">日期: {f.date} | 时间：{f.time}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-[#DCD6CC]">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
+                        <Hotel className="w-5 h-5 text-teal-600" /> 酒店与住宿
+                      </h3>
+                      <button 
+                        onClick={() => {
+                          setHotelForm({ name: '', address: '', checkIn: '', checkOut: '' });
+                          setModalType('hotel');
+                        }}
+                        className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium"
+                      >
+                        + 添加酒店
+                      </button>
+                    </div>
+
+                    {(!currentTrip.hotels || currentTrip.hotels.length === 0) ? (
+                      <p className="text-sm text-[#888] bg-[#ECE7DF] p-5 rounded-2xl border border-[#DCD6CC]">暂无酒店记录</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {currentTrip.hotels.map((h, i) => (
+                          <div key={h.id || i} className="p-5 rounded-2xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-2 relative">
+                            <div className="flex justify-between items-center">
+                              <h4 className="font-bold text-base text-[#1A1817]">{h.name}</h4>
+                              <button 
+                                onClick={() => confirmAndDelete(() => {
+                                  const updated = currentTrip.hotels.filter((_, idx) => idx !== i);
+                                  setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, hotels: updated } : t));
+                                }, h.name)}
+                                className="text-gray-400 hover:text-red-500"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <p className="text-xs text-[#666]">📍 地址：{h.address}</p>
+                            <p className="text-xs font-medium text-[#555]">入住：{h.checkIn} ~ 退房：{h.checkOut}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: 天气与智能穿搭/物品指南恢复 */}
+              {activeTab === 'weather' && (
+                <div className="mt-8 space-y-6">
+                  <div>
+                    <h3 className="text-xl font-bold tracking-tight">每日独立天气与智能穿搭/物品指南</h3>
+                    <p className="text-xs text-[#777] mt-0.5">选择具体天数，查看当地预计气象与智能打包建议</p>
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC]">
+                    {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
+                      <button
+                        key={dayKey}
+                        onClick={() => setActiveWeatherDay(dayKey)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+                          activeWeatherDay === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D4CCE0]'
+                        }`}
+                      >
+                        {dayKey} 天气
+                      </button>
+                    ))}
+                  </div>
+
+                  {(() => {
+                    const dayData = (currentTrip.dailyWeather && currentTrip.dailyWeather[activeWeatherDay]) || {
+                      temp: '10°C / 3°C', condition: '晴间多云 ⛅', advice: '天气晴朗，早晚略有寒意，建议备好防风外套。', packing: ['防风外套', '舒适运动鞋', '充电宝']
+                    };
+                    return (
+                      <div className="space-y-6 animate-fade-in">
+                        <div className="bg-[#ECE7DF] p-8 rounded-3xl border border-[#DCD6CC] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                          <div>
+                            <span className="text-xs text-[#888] font-bold uppercase tracking-wider">{activeWeatherDay} 预计气象速览</span>
+                            <div className="text-4xl font-extrabold mt-2 flex items-center gap-4 text-[#1A1817]">
+                              {dayData.temp} 
+                              <span className="text-xl font-normal text-[#555]">{dayData.condition}</span>
+                            </div>
+                            <p className="text-sm text-[#666] mt-3 max-w-xl leading-relaxed">{dayData.advice}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                          <div className="p-6 border border-[#DCD6CC] rounded-3xl bg-white shadow-xs space-y-3">
+                            <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">👕 {activeWeatherDay} 智能穿搭建议</h4>
+                            <p className="text-sm text-[#666] leading-relaxed">
+                              根据气温（{dayData.temp}），建议采用多层穿搭，方便室内外温差调节，鞋履建议选择适合步行的防滑鞋。
+                            </p>
+                          </div>
+                          <div className="p-6 border border-[#DCD6CC] rounded-3xl bg-white shadow-xs space-y-3">
+                            <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">🎒 {activeWeatherDay} 智能行李物品清单</h4>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {(dayData.packing || ['护照证件', '雨具', '充电宝']).map((item, idx) => (
+                                <span key={idx} className="px-3 py-1.5 bg-[#E2DCD2] text-[#444] text-xs font-semibold rounded-xl border border-[#DCD6CC]">
+                                  ✓ {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Tab 5: 多币种记账与高级 AA 清算 (保持完美不变) */}
               {activeTab === 'expenses' && (
                 <div className="mt-8 space-y-8">
                   <div className="flex justify-between items-center flex-wrap gap-4">
@@ -570,7 +754,6 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* 1. 消费总额与付款人统计 */}
                   {currentTrip.expenses && currentTrip.expenses.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="p-5 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-1">
@@ -600,7 +783,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 2. 高级 AA 制转账对账建议 */}
                   {currentTrip.expenses && currentTrip.expenses.length > 0 && (
                     <div className="p-6 rounded-3xl bg-amber-50/60 border border-amber-200/80 space-y-4">
                       <div className="flex items-center gap-2">
@@ -632,7 +814,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 3. 记账明细清单 */}
                   <div className="space-y-3 pt-2">
                     <h4 className="font-bold text-sm text-[#444]">所有记账明细清单：</h4>
                     {currentTrip.expenses.map((exp, idx) => (
@@ -762,7 +943,10 @@ export default function App() {
                           dailyWeather: { 'Day 1': { temp: '-2°C', condition: '晴朗 ☀️', advice: '气候寒冷，注意保暖。', packing: ['羽绒服'] } },
                           flights: [], hotels: [],
                           itinerary: { 'Day 1': [{ id: 'd1', time: '14:00', title: '抵达与酒店入住', desc: '休整。', transport: '巴士', distance: '市区', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
-                          masterSpots: [], expenses: [], memories: []
+                          masterSpots: [
+                            { id: 'ms1', name: '极光观测点', desc: '绝佳北极光欣赏地。', img: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600', mapUrl: 'https://maps.google.com', rednoteUrl: 'https://www.xiaohongshu.com' }
+                          ], 
+                          expenses: [], memories: []
                         };
                         setTrips([newT, ...trips]);
                         setModalType(null);
@@ -771,6 +955,75 @@ export default function App() {
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
                       立即创建
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 新增行程弹窗 */}
+            {modalType === 'itinerary' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">📝 新增行程详情与交通导航</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">目标天数</label>
+                    <select value={activeDayTab} onChange={e => setActiveDayTab(e.target.value)} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
+                      {Object.keys(currentTrip?.itinerary || {}).map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">时间</label>
+                      <input type="text" value={itineraryForm.time} onChange={e => setItineraryForm({...itineraryForm, time: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="14:00" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">景点名称</label>
+                      <input type="text" value={itineraryForm.title} onChange={e => setItineraryForm({...itineraryForm, title: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="浅草寺" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">与上一站距离提示</label>
+                    <input type="text" value={itineraryForm.distance} onChange={e => setItineraryForm({...itineraryForm, distance: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="距上一站步行 10 分钟" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">详细交通与乘搭路线</label>
+                    <input type="text" value={itineraryForm.transport} onChange={e => setItineraryForm({...itineraryForm, transport: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="乘搭地铁银座线至浅草站下车..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">开放时间</label>
+                      <input type="text" value={itineraryForm.opening} onChange={e => setItineraryForm({...itineraryForm, opening: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="09:00 - 18:00" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">Google Maps 链接</label>
+                      <input type="text" value={itineraryForm.mapUrl} onChange={e => setItineraryForm({...itineraryForm, mapUrl: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://maps.google.com/?q=..." />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">游玩描述</label>
+                    <textarea value={itineraryForm.desc} onChange={e => setItineraryForm({...itineraryForm, desc: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="描述..." />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!itineraryForm.title) { alert('请填写景点名称'); return; }
+                        const newItem = { id: Date.now().toString(), ...itineraryForm };
+                        const updated = {
+                          ...currentTrip.itinerary,
+                          [activeDayTab]: [...(currentTrip.itinerary[activeDayTab] || []), newItem]
+                        };
+                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updated } : t));
+                        setModalType(null);
+                        triggerToast('✨ 行程添加成功！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      确认添加
                     </button>
                   </div>
                 </div>
@@ -819,6 +1072,103 @@ export default function App() {
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
                       保存照片
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 添加航班 */}
+            {modalType === 'flight' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">✈️ 添加航班信息</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">类型</label>
+                    <select value={flightForm.type} onChange={e => setFlightForm({...flightForm, type: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
+                      <option value="去程">去程</option>
+                      <option value="回程">回程</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">航班号</label>
+                    <input type="text" value={flightForm.flightNo} onChange={e => setFlightForm({...flightForm, flightNo: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="MH 088" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">日期</label>
+                      <input type="date" value={flightForm.date} onChange={e => setFlightForm({...flightForm, date: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">时间</label>
+                      <input type="text" value={flightForm.time} onChange={e => setFlightForm({...flightForm, time: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="09:15 -> 17:30" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">航线</label>
+                    <input type="text" value={flightForm.route} onChange={e => setFlightForm({...flightForm, route: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="KUL -> NRT" />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!flightForm.flightNo) { alert('请填写航班号'); return; }
+                        const newF = { id: Date.now().toString(), ...flightForm };
+                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, flights: [...t.flights, newF] } : t));
+                        setModalType(null);
+                        triggerToast('✈️ 航班添加成功！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      确认添加
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 添加酒店 */}
+            {modalType === 'hotel' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">🏨 添加酒店住宿</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">酒店名称</label>
+                    <input type="text" value={hotelForm.name} onChange={e => setHotelForm({...hotelForm, name: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="新宿格拉斯丽酒店" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">地址</label>
+                    <input type="text" value={hotelForm.address} onChange={e => setHotelForm({...hotelForm, address: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="详细地址..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">入住日期</label>
+                      <input type="date" value={hotelForm.checkIn} onChange={e => setHotelForm({...hotelForm, checkIn: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">退房日期</label>
+                      <input type="date" value={hotelForm.checkOut} onChange={e => setHotelForm({...hotelForm, checkOut: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!hotelForm.name) { alert('请填写酒店名称'); return; }
+                        const newH = { id: Date.now().toString(), ...hotelForm };
+                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, hotels: [...t.hotels, newH] } : t));
+                        setModalType(null);
+                        triggerToast('🏨 酒店添加成功！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      确认添加
                     </button>
                   </div>
                 </div>
@@ -886,7 +1236,7 @@ export default function App() {
               </>
             )}
 
-            {/* 高级记账弹窗（支持分摊人员选择 & 平均/自定义金额） */}
+            {/* 高级记账弹窗 */}
             {modalType === 'expense' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
@@ -935,7 +1285,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* 分摊设置区域 */}
+                  {/* 分摊设置 */}
                   <div className="p-4 bg-[#ECE7DF] rounded-2xl border border-[#DCD6CC] space-y-3">
                     <label className="text-xs font-bold text-[#444] block">👥 选择参与分摊的同行伙伴 (可多选)</label>
                     <div className="flex flex-wrap gap-2">
@@ -986,7 +1336,6 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* 自定义金额输入框 */}
                     {expenseForm.splitMode === 'custom' && (
                       <div className="space-y-2 pt-2">
                         <span className="text-[11px] text-[#666] block">请为每个分摊成员输入各自应承担的金额：</span>
