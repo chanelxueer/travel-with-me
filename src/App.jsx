@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Calendar, MapPin, DollarSign, CloudSun, Users, 
   Share2, Plus, Trash2, CheckCircle, Plane, Hotel, 
-  Sparkles, Camera, BookOpen, Clock, Heart, Download, Compass, ChevronRight, ArrowLeft, Navigation, ExternalLink, Edit3, X, RefreshCw
+  Sparkles, Camera, BookOpen, Clock, Heart, Download, Compass, ChevronRight, ArrowLeft, Navigation, ExternalLink, Edit3, X, RefreshCw, Upload, ArrowRight, CheckSquare, Square
 } from 'lucide-react';
 
 export default function App() {
   const [trips, setTrips] = useState(() => {
-    const saved = localStorage.getItem('travel_with_me_cloud_v9');
+    const saved = localStorage.getItem('travel_with_me_cloud_v13');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
@@ -20,6 +20,7 @@ export default function App() {
         endDate: '2026-12-29',
         currency: 'RM',
         companions: 3,
+        companionNames: ['我', 'Alex', 'Sarah'],
         coverImage: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800',
         dailyWeather: {
           'Day 1': { temp: '6°C / 1°C', condition: '多云 ☁️', advice: '抵达东京气温较低，建议出机场前穿好羽绒服，注意保暖。', packing: ['厚羽绒服', '发热保暖内衣', '大容量充电宝'] },
@@ -48,8 +49,8 @@ export default function App() {
           { id: 's4', name: '表参道美学街区', desc: '世界级建筑大师打造的时尚购物天堂。', img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600', mapUrl: 'https://maps.google.com/?q=Omotesando', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=%E8%A1%A8%E5%8F%82%E9%81%93' }
         ],
         expenses: [
-          { id: 'e1', title: '往返机票', amount: 2400, currency: 'MYR', convertedRM: 2400, paidBy: 'Alex', category: '交通' },
-          { id: 'e2', title: '居酒屋晚餐', amount: 12000, currency: 'JPY', convertedRM: 348, paidBy: '我', category: '餐饮' }
+          { id: 'e1', title: '往返机票', amount: 2400, currency: 'MYR', convertedRM: 2400, paidBy: 'Alex', splitMode: 'equal', splitAmong: ['我', 'Alex', 'Sarah'], customShares: {}, category: '交通' },
+          { id: 'e2', title: '居酒屋晚餐', amount: 12000, currency: 'JPY', convertedRM: 348, paidBy: '我', splitMode: 'equal', splitAmong: ['我', 'Alex'], customShares: {}, category: '餐饮' }
         ],
         memories: [
           { id: 'm1', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', date: '2026-12-25', location: '新宿歌舞伎町', comment: '刚到东京的第一顿串烧，氛围感绝了！' }
@@ -65,23 +66,33 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // 弹窗状态控制器
+  // 弹窗状态
   const [modalType, setModalType] = useState(null); 
   const [editingItem, setEditingItem] = useState(null);
 
   // 表单数据
-  const [newTripForm, setNewTripForm] = useState({ title: '', destination: '日本·北海道 (Hokkaido)', startDate: '2027-01-10', endDate: '2027-01-15', currency: 'RM', companions: 4, coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' });
+  const [newTripForm, setNewTripForm] = useState({ title: '', destination: '日本·北海道 (Hokkaido)', startDate: '2027-01-10', endDate: '2027-01-15', currency: 'RM', companions: 3, companionNames: ['我', 'Alex', 'Sarah'], coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' });
   const [itineraryForm, setItineraryForm] = useState({ time: '10:00', title: '', desc: '', transport: '步行', distance: '距上一站：...', opening: '09:00 - 18:00', mapUrl: 'https://maps.google.com/?q=', photo: '' });
-  const [expenseForm, setExpenseForm] = useState({ title: '', amount: '', currency: 'MYR', paidBy: '我', category: '餐饮' });
+  
+  // 记账表单 (支持高级分摊)
+  const [expenseForm, setExpenseForm] = useState({ 
+    title: '', 
+    amount: '', 
+    currency: 'MYR', 
+    paidBy: '我', 
+    category: '餐饮',
+    splitMode: 'equal', // 'equal' (平均分摊) 或 'custom' (自定义金额)
+    splitAmong: ['我', 'Alex', 'Sarah'], // 参与分摊的人员名单
+    customShares: {} // { '我': 100, 'Alex': 200 } 自定义各自承担数额
+  });
+
   const [flightForm, setFlightForm] = useState({ type: '去程', flightNo: '', date: '', time: '', route: '' });
   const [hotelForm, setHotelForm] = useState({ name: '', address: '', checkIn: '', checkOut: '' });
   const [memoryForm, setMemoryForm] = useState({ url: '', date: new Date().toISOString().split('T')[0], location: '', comment: '' });
-  const [spotToSchedule, setSpotToSchedule] = useState(null);
-  const [spotDayTarget, setSpotDayTarget] = useState('Day 1');
-  const [spotTimeTarget, setSpotTimeTarget] = useState('14:00');
+  const [spotPhotoForm, setSpotPhotoForm] = useState({ url: '' });
 
   useEffect(() => {
-    localStorage.setItem('travel_with_me_cloud_v9', JSON.stringify(trips));
+    localStorage.setItem('travel_with_me_cloud_v13', JSON.stringify(trips));
     setIsSyncing(true);
     const timer = setTimeout(() => setIsSyncing(false), 500);
     return () => clearTimeout(timer);
@@ -122,6 +133,17 @@ export default function App() {
     return (amt * (rates[currency] || 1)).toFixed(2);
   };
 
+  const handleLocalImageUpload = (e, callback) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      callback(uploadEvent.target.result);
+      triggerToast('📁 本地照片已成功加载！');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const getSmartRecommendedSpots = () => {
     if (!currentTrip) return [];
     const scheduledTitles = new Set();
@@ -131,12 +153,98 @@ export default function App() {
     return (currentTrip.masterSpots || []).filter(s => !scheduledTitles.has(s.name));
   };
 
-  const handleRefreshSpots = () => {
-    if (!currentTrip) return;
-    const shuffled = [...(currentTrip.masterSpots || [])].sort(() => 0.5 - Math.random());
-    const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, masterSpots: shuffled } : t);
-    setTrips(updatedTrips);
-    triggerToast('🔄 已为您换一批智能推荐景点！');
+  // 核心：高级 AA 制清算对账算法（支持部分人分摊、平均分摊、自定义数额）
+  const calculateAAClearance = () => {
+    if (!currentTrip || !currentTrip.expenses || currentTrip.expenses.length === 0) return { transactions: [], totalSpent: '0.00', memberOwes: {} };
+    
+    let totalSpent = 0;
+    const paidMap = {}; // 谁实际垫付了多少
+    const shareMap = {}; // 谁理应承担多少（负债累积）
+
+    // 获取同行成员列表（默认从 trip 中取，如果没有则自动推导）
+    const members = currentTrip.companionNames || ['我', 'Alex', 'Sarah'];
+    members.forEach(m => {
+      paidMap[m] = 0;
+      shareMap[m] = 0;
+    });
+
+    currentTrip.expenses.forEach(exp => {
+      const val = parseFloat(exp.convertedRM || convertToRM(exp.amount, exp.currency));
+      totalSpent += val;
+      const payer = exp.paidBy || members[0];
+      if (paidMap[payer] !== undefined) paidMap[payer] += val;
+      else paidMap[payer] = val;
+
+      // 分摊逻辑
+      const splitMode = exp.splitMode || 'equal';
+      const splitAmong = exp.splitAmong && exp.splitAmong.length > 0 ? exp.splitAmong : members;
+
+      if (splitMode === 'equal') {
+        const sharePerPerson = val / splitAmong.length;
+        splitAmong.forEach(person => {
+          if (shareMap[person] !== undefined) shareMap[person] += sharePerPerson;
+          else shareMap[person] = sharePerPerson;
+        });
+      } else if (splitMode === 'custom') {
+        const customShares = exp.customShares || {};
+        let customTotal = 0;
+        splitAmong.forEach(person => {
+          const sVal = parseFloat(customShares[person]) || 0;
+          customTotal += sVal;
+          if (shareMap[person] !== undefined) shareMap[person] += sVal;
+          else shareMap[person] = sVal;
+        });
+        // 如果自定义总和跟总额有出入，多退少补平均分摊余数
+        if (Math.abs(customTotal - val) > 0.01 && splitAmong.length > 0) {
+          const diff = (val - customTotal) / splitAmong.length;
+          splitAmong.forEach(person => {
+            shareMap[person] += diff;
+          });
+        }
+      }
+    });
+
+    // 计算每个人净余额：净收支 = 已付款 - 应承担分摊
+    const balances = {};
+    const allNames = new Set([...Object.keys(paidMap), ...Object.keys(shareMap), ...members]);
+    
+    allNames.forEach(name => {
+      const paid = paidMap[name] || 0;
+      const share = shareMap[name] || 0;
+      balances[name] = paid - share;
+    });
+
+    const debtors = []; // 负数（欠钱的人）
+    const creditors = []; // 正数（应收钱的人）
+
+    Object.entries(balances).forEach(([person, bal]) => {
+      if (bal < -0.01) debtors.push({ name: person, amount: Math.abs(bal) });
+      else if (bal > 0.01) creditors.push({ name: person, amount: bal });
+    });
+
+    const transactions = [];
+    let dIdx = 0;
+    let cIdx = 0;
+
+    while (dIdx < debtors.length && cIdx < creditors.length) {
+      const debtor = debtors[dIdx];
+      const creditor = creditors[cIdx];
+      const transferAmt = Math.min(debtor.amount, creditor.amount);
+
+      transactions.push({
+        from: debtor.name,
+        to: creditor.name,
+        amount: transferAmt.toFixed(2)
+      });
+
+      debtor.amount -= transferAmt;
+      creditor.amount -= transferAmt;
+
+      if (debtor.amount < 0.01) dIdx++;
+      if (creditor.amount < 0.01) cIdx++;
+    }
+
+    return { transactions, totalSpent: totalSpent.toFixed(2), paidMap, shareMap };
   };
 
   return (
@@ -194,12 +302,12 @@ export default function App() {
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">带着热情与手账，去探索世界吧。</h2>
                 <p className="text-sm text-[#666] mt-2 max-w-xl leading-relaxed">
-                  多端实时同步：自动计算出发倒数、智能推荐小红书热门景点、每日独立天气与多币种记账。
+                  多端实时同步：自动计算出发倒数、智能推荐小红书热门景点、多币种高级 AA 记账与结账清算。
                 </p>
               </div>
               <button 
                 onClick={() => {
-                  setNewTripForm({ title: '', destination: '日本·北海道 (Hokkaido)', startDate: '2027-01-10', endDate: '2027-01-15', currency: 'RM', companions: 4, coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' });
+                  setNewTripForm({ title: '', destination: '日本·北海道 (Hokkaido)', startDate: '2027-01-10', endDate: '2027-01-15', currency: 'RM', companions: 3, companionNames: ['我', 'Alex', 'Sarah'], coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' });
                   setModalType('newTrip');
                 }}
                 className="px-6 py-3.5 bg-[#2C2A29] text-[#FDFBF7] text-sm rounded-2xl font-bold hover:bg-[#444] transition shadow-md flex items-center gap-2 whitespace-nowrap"
@@ -208,7 +316,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* 即将来临的旅行计划 */}
             <div className="space-y-4">
               <h3 className="text-xl font-bold tracking-tight text-[#1A1817] flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-amber-600" /> 即将来临的旅行计划
@@ -248,30 +355,6 @@ export default function App() {
                 </div>
               )}
             </div>
-
-            {/* 过去的旅程 */}
-            {pastTrips.length > 0 && (
-              <div className="space-y-4 pt-6">
-                <h3 className="text-xl font-bold tracking-tight text-[#1A1817] flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-gray-500" /> 过去的旅程回忆 (已自动归档)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {pastTrips.map(trip => (
-                    <div 
-                      key={trip.id}
-                      onClick={() => setSelectedTripId(trip.id)}
-                      className="bg-white/85 border border-[#DCD6CC] rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer group opacity-90"
-                    >
-                      <div className="p-6 space-y-2">
-                        <span className="text-xs text-[#888]">{trip.destination}</span>
-                        <h4 className="text-lg font-bold text-[#1A1817]">{trip.title}</h4>
-                        <span className="text-xs text-[#777] block">{trip.startDate} ~ {trip.endDate} (已完成)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           /* ================= 详情页视图 ================= */
@@ -282,13 +365,29 @@ export default function App() {
                   <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2DCD2] text-[#444] text-xs font-semibold mb-3 tracking-wide">
                     {currentTrip.destination}
                   </span>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">{currentTrip.title}</h2>
+                  
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">{currentTrip.title}</h2>
+                    <button 
+                      onClick={() => {
+                        const newTitle = prompt('请输入新的旅行名称：', currentTrip.title);
+                        if (!newTitle) return;
+                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, title: newTitle } : t));
+                        triggerToast('✏️ 行程名称修改成功！');
+                      }}
+                      className="p-2 rounded-xl bg-[#ECE7DF] hover:bg-[#E2DCD2] text-gray-700 transition"
+                      title="编辑行程名称"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-4 text-sm text-[#777] mt-3">
                     <span className="flex items-center gap-1.5 bg-[#ECE7DF] px-3 py-1 rounded-xl border border-[#DCD6CC]">
                       <Calendar className="w-4 h-4 text-[#555]"/> {currentTrip.startDate} ~ {currentTrip.endDate}
                     </span>
                     <span className="flex items-center gap-1.5 bg-[#ECE7DF] px-3 py-1 rounded-xl border border-[#DCD6CC]">
-                      <Users className="w-4 h-4 text-[#555]"/> {currentTrip.companions} 人同行
+                      <Users className="w-4 h-4 text-[#555]"/> 同行伙伴: {(currentTrip.companionNames || ['我', 'Alex', 'Sarah']).join(', ')}
                     </span>
                   </div>
                 </div>
@@ -301,7 +400,7 @@ export default function App() {
                   { id: 'recommendations', label: '智能推荐景点 (小红书热榜)', icon: Sparkles },
                   { id: 'flights_hotels', label: '航班与酒店住宿', icon: Plane },
                   { id: 'weather', label: '分天天气与智能建议', icon: CloudSun },
-                  { id: 'expenses', label: '多币种记账与统计', icon: DollarSign },
+                  { id: 'expenses', label: '多币种记账与高级AA清算', icon: DollarSign },
                   { id: 'memories', label: '旅途回忆相册', icon: Camera }
                 ].map(tab => {
                   const Icon = tab.icon;
@@ -319,13 +418,13 @@ export default function App() {
                 })}
               </div>
 
-              {/* Tab 1: 行程 & 详细交通 */}
+              {/* Tab 1: 行程 */}
               {activeTab === 'itinerary' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center flex-wrap gap-4">
                     <div>
                       <h3 className="text-xl font-bold tracking-tight">每日行程规划与详细乘搭路线</h3>
-                      <p className="text-xs text-[#777] mt-0.5">包含精确的换乘路线、步行指南、Google Maps 链接及编辑功能</p>
+                      <p className="text-xs text-[#777] mt-0.5">包含精确的换乘路线、步行指南、Google Maps 链接及景点照片上传</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -339,39 +438,23 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC] items-center justify-between">
-                    <div className="flex gap-2">
-                      {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
-                        <button
-                          key={dayKey}
-                          onClick={() => setActiveDayTab(dayKey)}
-                          className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
-                            activeDayTab === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D4CCE0]'
-                          }`}
-                        >
-                          {dayKey}
-                        </button>
-                      ))}
-                    </div>
-                    <button 
-                      onClick={() => {
-                        const newDayName = prompt('请输入新天数名称（例如：Day 4）：', `Day ${Object.keys(currentTrip.itinerary).length + 1}`);
-                        if (!newDayName) return;
-                        if (currentTrip.itinerary[newDayName]) { alert('该天数已存在'); return; }
-                        const updatedItinerary = { ...currentTrip.itinerary, [newDayName]: [] };
-                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t));
-                        setActiveDayTab(newDayName);
-                        triggerToast('📅 成功添加新的一天！');
-                      }}
-                      className="text-xs bg-[#E2DCD2] text-[#2C2A29] px-3 py-2 rounded-xl font-medium hover:bg-[#D4CCE0]"
-                    >
-                      + 新增一天
-                    </button>
+                  <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC] items-center">
+                    {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
+                      <button
+                        key={dayKey}
+                        onClick={() => setActiveDayTab(dayKey)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+                          activeDayTab === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D4CCE0]'
+                        }`}
+                      >
+                        {dayKey}
+                      </button>
+                    ))}
                   </div>
 
                   <div className="space-y-4 pt-2">
                     {(!currentTrip.itinerary[activeDayTab] || currentTrip.itinerary[activeDayTab].length === 0) ? (
-                      <p className="text-sm text-[#888] bg-[#ECE7DF] p-8 rounded-2xl text-center border border-[#DCD6CC]">这一天还没有添加行程，点击上方按钮或从智能推荐中加入吧！</p>
+                      <p className="text-sm text-[#888] bg-[#ECE7DF] p-8 rounded-2xl text-center border border-[#DCD6CC]">这一天还没有添加行程</p>
                     ) : (
                       currentTrip.itinerary[activeDayTab].map((item, idx) => (
                         <div key={item.id || idx} className="p-6 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-3 relative group">
@@ -380,69 +463,30 @@ export default function App() {
                               <span className="px-3 py-1 bg-[#2C2A29] text-white text-xs rounded-lg font-bold">{item.time}</span>
                               <span className="text-xs text-[#666] font-medium bg-[#E2DCD2] px-3 py-1 rounded-full">⏳ 开放时间: {item.opening}</span>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <button 
-                                onClick={() => {
-                                  setEditingItem({ day: activeDayTab, index: idx, ...item });
-                                  setItineraryForm(item);
-                                  setModalType('editItinerary');
-                                }}
-                                className="text-gray-400 hover:text-amber-700 transition p-2 rounded-xl hover:bg-amber-50"
-                                title="编辑此行程"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => confirmAndDelete(() => {
-                                  const updatedDayList = currentTrip.itinerary[activeDayTab].filter((_, i) => i !== idx);
-                                  const updatedItinerary = { ...currentTrip.itinerary, [activeDayTab]: updatedDayList };
-                                  setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t));
-                                }, item.title)}
-                                className="text-gray-400 hover:text-red-500 transition p-2 rounded-xl hover:bg-red-50"
-                                title="删除此行程"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <button 
+                              onClick={() => confirmAndDelete(() => {
+                                const updatedDayList = currentTrip.itinerary[activeDayTab].filter((_, i) => i !== idx);
+                                setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: { ...currentTrip.itinerary, [activeDayTab]: updatedDayList } } : t));
+                              }, item.title)}
+                              className="text-gray-400 hover:text-red-500 transition p-2 rounded-xl"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-
                           <h4 className="font-bold text-lg text-[#1A1817]">{item.title}</h4>
-                          <p className="text-sm text-[#666] leading-relaxed">{item.desc}</p>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#DCD6CC] text-xs text-[#555]">
-                            <div className="flex items-start gap-2 bg-white p-2.5 rounded-xl border border-[#DCD6CC]">
-                              <Navigation className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                              <span><strong>详细交通与换乘路线：</strong> {item.transport}</span>
-                            </div>
-                            <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#DCD6CC]">
-                              <div className="flex items-center gap-2 truncate">
-                                <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
-                                <span className="truncate"><strong>距离提示:</strong> {item.distance}</span>
-                              </div>
-                              {item.mapUrl && (
-                                <a 
-                                  href={item.mapUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline flex items-center gap-1 font-bold shrink-0 ml-2"
-                                >
-                                  Google Maps <ExternalLink className="w-3 h-3" />
-                                </a>
-                              )}
-                            </div>
-                          </div>
+                          <p className="text-sm text-[#666]">{item.desc}</p>
 
                           <div className="pt-2">
                             {item.photo ? (
-                              <div className="relative h-40 rounded-2xl overflow-hidden border border-[#DCD6CC]">
+                              <div className="relative h-44 rounded-2xl overflow-hidden border border-[#DCD6CC] group/photo">
                                 <img src={item.photo} alt={item.title} className="w-full h-full object-cover" />
                                 <button 
                                   onClick={() => {
-                                    const updatedList = currentTrip.itinerary[activeDayTab].map((it, i) => i === idx ? { ...it, photo: '' } : it);
-                                    setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: { ...currentTrip.itinerary, [activeDayTab]: updatedList } } : t));
+                                    setEditingItem({ day: activeDayTab, index: idx, ...item });
+                                    setSpotPhotoForm({ url: item.photo });
+                                    setModalType('spotPhoto');
                                   }}
-                                  className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg"
+                                  className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-3 py-1.5 rounded-xl font-medium hover:bg-black transition"
                                 >
                                   更换照片
                                 </button>
@@ -450,15 +494,13 @@ export default function App() {
                             ) : (
                               <button 
                                 onClick={() => {
-                                  const imgUrl = prompt('请输入该景点的照片图片链接 (URL):', 'https://images.unsplash.com/photo-...');
-                                  if (!imgUrl) return;
-                                  const updatedList = currentTrip.itinerary[activeDayTab].map((it, i) => i === idx ? { ...it, photo: imgUrl } : it);
-                                  setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: { ...currentTrip.itinerary, [activeDayTab]: updatedList } } : t));
-                                  triggerToast('📸 景点照片添加成功！');
+                                  setEditingItem({ day: activeDayTab, index: idx, ...item });
+                                  setSpotPhotoForm({ url: '' });
+                                  setModalType('spotPhoto');
                                 }}
-                                className="text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-200 transition flex items-center gap-1"
+                                className="text-xs text-amber-800 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl border border-amber-200 transition flex items-center gap-1.5 font-medium shadow-xs"
                               >
-                                <Camera className="w-3.5 h-3.5" /> + 为此景点添加照片
+                                <Camera className="w-4 h-4" /> + 为此景点添加照片 (支持本地 JPG 或 URL)
                               </button>
                             )}
                           </div>
@@ -469,258 +511,76 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 2: 智能推荐景点 */}
+              {/* Tab 2: 推荐景点 */}
               {activeTab === 'recommendations' && (
                 <div className="mt-8 space-y-6">
-                  <div className="flex justify-between items-center flex-wrap gap-4">
-                    <div>
-                      <h3 className="text-xl font-bold tracking-tight">智能推荐必去景点（含小红书热门笔记）</h3>
-                      <p className="text-xs text-[#777] mt-0.5">自动过滤已安排景点，点击「换一换」可刷新更多推荐</p>
-                    </div>
-                    <button 
-                      onClick={handleRefreshSpots}
-                      className="px-4 py-2.5 bg-[#E2DCD2] text-[#2C2A29] text-xs font-bold rounded-xl hover:bg-[#D4CCE0] transition flex items-center gap-1.5 shadow-xs"
-                    >
-                      <RefreshCw className="w-4 h-4" /> 换一换 (Refresh)
-                    </button>
-                  </div>
-
-                  {getSmartRecommendedSpots().length === 0 ? (
-                    <div className="text-center py-12 bg-[#ECE7DF] rounded-3xl border border-[#DCD6CC] text-[#888]">
-                      <Sparkles className="w-8 h-8 mx-auto mb-2 text-amber-500" />
-                      <p className="text-sm font-medium">太棒了！所有推荐的景点都已经完美安排进您的行程里啦！</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      {getSmartRecommendedSpots().map((spot, i) => (
-                        <div key={spot.id || i} className="rounded-3xl overflow-hidden border border-[#DCD6CC] bg-white shadow-xs flex flex-col justify-between">
-                          <div>
-                            <div className="h-44 overflow-hidden relative">
-                              <img src={spot.img} alt={spot.name} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
-                            </div>
-                            <div className="p-5 space-y-2">
-                              <h4 className="font-bold text-lg text-[#1A1817]">{spot.name}</h4>
-                              <p className="text-sm text-[#666] leading-relaxed">{spot.desc}</p>
-                              
-                              <div className="flex items-center gap-3 pt-2">
-                                {spot.mapUrl && (
-                                  <a href={spot.mapUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#ECE7DF] text-[#333] px-3 py-1.5 rounded-xl font-medium hover:bg-[#E2DCD2] flex items-center gap-1">
-                                    <MapPin className="w-3.5 h-3.5 text-rose-600"/> Google Maps
-                                  </a>
-                                )}
-                                {spot.rednoteUrl && (
-                                  <a href={spot.rednoteUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-medium hover:bg-red-100 flex items-center gap-1">
-                                    📖 小红书攻略
-                                  </a>
-                                )}
-                              </div>
-                            </div>
+                  <h3 className="text-xl font-bold tracking-tight">智能推荐必去景点（含小红书热门笔记）</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {getSmartRecommendedSpots().map((spot, i) => (
+                      <div key={spot.id || i} className="rounded-3xl overflow-hidden border border-[#DCD6CC] bg-white shadow-xs flex flex-col justify-between">
+                        <div>
+                          <div className="h-44 overflow-hidden relative">
+                            <img src={spot.img} alt={spot.name} className="w-full h-full object-cover" />
                           </div>
-                          <div className="p-5 pt-0">
-                            <button 
-                              onClick={() => {
-                                setSpotToSchedule(spot);
-                                setSpotDayTarget(Object.keys(currentTrip.itinerary)[0] || 'Day 1');
-                                setSpotTimeTarget('14:00');
-                                setModalType('scheduleSpot');
-                              }}
-                              className="w-full py-2.5 bg-[#2C2A29] text-white text-xs font-bold rounded-2xl hover:bg-[#444] transition flex items-center justify-center gap-2 shadow-sm"
-                            >
-                              <Plus className="w-4 h-4" /> 一键加入行程
-                            </button>
+                          <div className="p-5 space-y-2">
+                            <h4 className="font-bold text-lg text-[#1A1817]">{spot.name}</h4>
+                            <p className="text-sm text-[#666]">{spot.desc}</p>
+                            <div className="flex items-center gap-3 pt-2">
+                              {spot.rednoteUrl && (
+                                <a href={spot.rednoteUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-medium hover:bg-red-100 flex items-center gap-1">
+                                  📖 小红书攻略
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 3: 航班与酒店住宿 */}
-              {activeTab === 'flights_hotels' && (
-                <div className="mt-8 space-y-8">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-                        <Plane className="w-5 h-5 text-indigo-600" /> 航班信息
-                      </h3>
-                      <button 
-                        onClick={() => {
-                          setFlightForm({ type: '去程', flightNo: '', date: '', time: '', route: '' });
-                          setModalType('flight');
-                        }}
-                        className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium"
-                      >
-                        + 添加航班
-                      </button>
-                    </div>
-
-                    {(!currentTrip.flights || currentTrip.flights.length === 0) ? (
-                      <p className="text-sm text-[#888] bg-[#ECE7DF] p-5 rounded-2xl border border-[#DCD6CC]">暂无航班记录</p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {currentTrip.flights.map((f, i) => (
-                          <div key={f.id || i} className="p-5 rounded-2xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-2 relative">
-                            <div className="flex justify-between font-bold text-sm">
-                              <span>{f.type}：{f.flightNo}</span>
-                              <button 
-                                onClick={() => confirmAndDelete(() => {
-                                  const updated = currentTrip.flights.filter((_, idx) => idx !== i);
-                                  setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, flights: updated } : t));
-                                }, f.flightNo)}
-                                className="text-gray-400 hover:text-red-500"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <p className="text-sm font-semibold text-[#1A1817]">{f.route}</p>
-                            <p className="text-xs text-[#666]">日期: {f.date} | 时间：{f.time}</p>
-                          </div>
-                        ))}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-4 pt-4 border-t border-[#DCD6CC]">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-                        <Hotel className="w-5 h-5 text-teal-600" /> 酒店与住宿
-                      </h3>
-                      <button 
-                        onClick={() => {
-                          setHotelForm({ name: '', address: '', checkIn: '', checkOut: '' });
-                          setModalType('hotel');
-                        }}
-                        className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium"
-                      >
-                        + 添加酒店
-                      </button>
-                    </div>
-
-                    {(!currentTrip.hotels || currentTrip.hotels.length === 0) ? (
-                      <p className="text-sm text-[#888] bg-[#ECE7DF] p-5 rounded-2xl border border-[#DCD6CC]">暂无酒店记录</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {currentTrip.hotels.map((h, i) => (
-                          <div key={h.id || i} className="p-5 rounded-2xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-2 relative">
-                            <div className="flex justify-between items-center">
-                              <h4 className="font-bold text-base text-[#1A1817]">{h.name}</h4>
-                              <button 
-                                onClick={() => confirmAndDelete(() => {
-                                  const updated = currentTrip.hotels.filter((_, idx) => idx !== i);
-                                  setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, hotels: updated } : t));
-                                }, h.name)}
-                                className="text-gray-400 hover:text-red-500"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <p className="text-xs text-[#666]">📍 地址：{h.address}</p>
-                            <p className="text-xs font-medium text-[#555]">入住：{h.checkIn} ~ 退房：{h.checkOut}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 4: 天气与建议 */}
-              {activeTab === 'weather' && (
-                <div className="mt-8 space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold tracking-tight">每日独立天气与智能穿搭/物品指南</h3>
-                    <p className="text-xs text-[#777] mt-0.5">选择具体的天数，查看当天专属的预计气象与智能打包建议</p>
-                  </div>
-
-                  <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC]">
-                    {Object.keys(currentTrip.itinerary || {}).map(dayKey => (
-                      <button
-                        key={dayKey}
-                        onClick={() => setActiveWeatherDay(dayKey)}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
-                          activeWeatherDay === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D4CCE0]'
-                        }`}
-                      >
-                        {dayKey} 天气
-                      </button>
                     ))}
                   </div>
-
-                  {(() => {
-                    const dayData = (currentTrip.dailyWeather && currentTrip.dailyWeather[activeWeatherDay]) || {
-                      temp: '10°C / 3°C', condition: '晴间多云 ⛅', advice: '天气晴朗，早晚略有寒意，建议备好防风外套。', packing: ['防风外套', '舒适运动鞋', '充电宝']
-                    };
-                    return (
-                      <div className="space-y-6 animate-fade-in">
-                        <div className="bg-[#ECE7DF] p-8 rounded-3xl border border-[#DCD6CC] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                          <div>
-                            <span className="text-xs text-[#888] font-bold uppercase tracking-wider">{activeWeatherDay} 预计气象速览</span>
-                            <div className="text-4xl font-extrabold mt-2 flex items-center gap-4 text-[#1A1817]">
-                              {dayData.temp} 
-                              <span className="text-xl font-normal text-[#555]">{dayData.condition}</span>
-                            </div>
-                            <p className="text-sm text-[#666] mt-3 max-w-xl leading-relaxed">{dayData.advice}</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                          <div className="p-6 border border-[#DCD6CC] rounded-3xl bg-white shadow-xs space-y-3">
-                            <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">👕 {activeWeatherDay} 智能穿搭建议</h4>
-                            <p className="text-sm text-[#666] leading-relaxed">
-                              根据 {activeWeatherDay} 的气温（{dayData.temp}），建议采用多层穿搭，方便室内外温差调节。鞋履建议选择适合步行的防滑运动鞋。
-                            </p>
-                          </div>
-                          <div className="p-6 border border-[#DCD6CC] rounded-3xl bg-white shadow-xs space-y-3">
-                            <h4 className="font-bold text-base flex items-center gap-2 text-[#1A1817]">🎒 {activeWeatherDay} 智能行李物品清单</h4>
-                            <div className="flex flex-wrap gap-2 pt-1">
-                              {(dayData.packing || ['护照证件', '雨具', '充电宝']).map((item, idx) => (
-                                <span key={idx} className="px-3 py-1.5 bg-[#E2DCD2] text-[#444] text-xs font-semibold rounded-xl border border-[#DCD6CC]">
-                                  ✓ {item}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </div>
               )}
 
-              {/* Tab 5: 多币种记账与统计面板 */}
+              {/* Tab 5: 记账与高级 AA 清算结算计算器 */}
               {activeTab === 'expenses' && (
-                <div className="mt-8 space-y-6">
-                  <div className="flex justify-between items-center">
+                <div className="mt-8 space-y-8">
+                  <div className="flex justify-between items-center flex-wrap gap-4">
                     <div>
-                      <h3 className="text-xl font-bold tracking-tight">同行开销分摊与智能消费统计</h3>
-                      <p className="text-xs text-[#777] mt-0.5">自动汇率折算 RM，清晰统计总消费以及不同付款人的消费总额</p>
+                      <h3 className="text-xl font-bold tracking-tight">同行开销分摊与高级 AA 制智能清算对账</h3>
+                      <p className="text-xs text-[#777] mt-0.5">支持部分人分摊、平均或自定义金额，智能生成最优转账方案</p>
                     </div>
                     <button 
                       onClick={() => {
+                        const members = currentTrip.companionNames || ['我', 'Alex', 'Sarah'];
                         setEditingItem(null);
-                        setExpenseForm({ title: '', amount: '', currency: 'MYR', paidBy: '我', category: '餐饮' });
+                        setExpenseForm({ 
+                          title: '', 
+                          amount: '', 
+                          currency: 'MYR', 
+                          paidBy: members[0], 
+                          category: '餐饮',
+                          splitMode: 'equal',
+                          splitAmong: [...members],
+                          customShares: {}
+                        });
                         setModalType('expense');
                       }}
-                      className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium"
+                      className="px-4 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-medium shadow-sm hover:bg-[#444]"
                     >
                       + 记一笔
                     </button>
                   </div>
 
-                  {/* 统计面板区域 */}
+                  {/* 1. 消费总额与付款人统计 */}
                   {currentTrip.expenses && currentTrip.expenses.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* 总共消费金额统计卡片 */}
                       <div className="p-5 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-1">
                         <span className="text-xs text-[#777] font-bold uppercase tracking-wider">💰 旅程总消费统计</span>
                         <div className="text-2xl font-extrabold text-[#1A1817] pt-1">
-                          RM {currentTrip.expenses.reduce((acc, curr) => acc + parseFloat(curr.convertedRM || convertToRM(curr.amount, curr.currency)), 0).toFixed(2)}
+                          RM {calculateAAClearance().totalSpent}
                         </div>
-                        <span className="text-xs text-[#888]">（所有外币已折算为马币 RM）</span>
+                        <span className="text-xs text-[#888]">（同行成员：{(currentTrip.companionNames || ['我', 'Alex', 'Sarah']).join(', ')}）</span>
                       </div>
 
-                      {/* 不同付款人总共消费/付款了多少统计卡片 */}
                       {Object.entries(
                         currentTrip.expenses.reduce((acc, curr) => {
                           const payer = curr.paidBy || '未知名';
@@ -734,45 +594,62 @@ export default function App() {
                           <div className="text-2xl font-extrabold text-emerald-700 pt-1">
                             RM {totalAmt.toFixed(2)}
                           </div>
-                          <span className="text-xs text-[#888]">（该成员累计付款总额）</span>
+                          <span className="text-xs text-[#888]">（该成员累计垫付总额）</span>
                         </div>
                       ))}
                     </div>
                   )}
 
+                  {/* 2. 高级 AA 制转账对账建议 */}
+                  {currentTrip.expenses && currentTrip.expenses.length > 0 && (
+                    <div className="p-6 rounded-3xl bg-amber-50/60 border border-amber-200/80 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-amber-600" />
+                        <h4 className="font-bold text-base text-[#1A1817]">🧮 高级 AA 制智能结账清算（谁该转给谁）</h4>
+                      </div>
+                      
+                      {calculateAAClearance().transactions.length === 0 ? (
+                        <p className="text-xs text-emerald-700 font-medium bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                          🎉 太棒了！大家的消费分摊刚好完美平衡，目前互不欠账！
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {calculateAAClearance().transactions.map((tx, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-2xl border border-amber-200 flex justify-between items-center shadow-xs">
+                              <div className="flex items-center gap-3 text-sm font-semibold text-[#2C2A29]">
+                                <span className="px-3 py-1 bg-amber-100 text-amber-900 rounded-xl text-xs">{tx.from}</span>
+                                <ArrowRight className="w-4 h-4 text-amber-600" />
+                                <span className="px-3 py-1 bg-emerald-100 text-emerald-900 rounded-xl text-xs">{tx.to}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm font-extrabold text-emerald-700 block">转账 RM {tx.amount}</span>
+                                <span className="text-[10px] text-[#888]">（结清此账）</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 3. 记账明细清单 */}
                   <div className="space-y-3 pt-2">
+                    <h4 className="font-bold text-sm text-[#444]">所有记账明细清单：</h4>
                     {currentTrip.expenses.map((exp, idx) => (
                       <div key={exp.id || idx} className="p-4 rounded-2xl bg-[#ECE7DF] border border-[#DCD6CC] flex justify-between items-center">
                         <div>
                           <h4 className="font-bold text-sm text-[#1A1817]">{exp.title}</h4>
-                          <span className="text-xs text-[#777]">付款人: {exp.paidBy} · 类别: {exp.category}</span>
+                          <span className="text-xs text-[#777]">
+                            付款人: <span className="font-semibold text-amber-800">{exp.paidBy}</span> · 
+                            类别: {exp.category} · 
+                            分摊: {exp.splitMode === 'custom' ? '自定义金额' : `平分 (${(exp.splitAmong || []).join(', ')})`}
+                          </span>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <span className="font-bold text-base block">{exp.currency || 'MYR'} {exp.amount}</span>
                             <span className="text-xs text-emerald-600 font-medium">≈ RM {exp.convertedRM || convertToRM(exp.amount, exp.currency || 'MYR')}</span>
                           </div>
-                          <button 
-                            onClick={() => {
-                              setEditingItem({ index: idx, ...exp });
-                              setExpenseForm({ title: exp.title, amount: exp.amount, currency: exp.currency || 'MYR', paidBy: exp.paidBy, category: exp.category });
-                              setModalType('editExpense');
-                            }}
-                            className="text-gray-400 hover:text-amber-700"
-                            title="编辑账单"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => confirmAndDelete(() => {
-                              const updated = currentTrip.expenses.filter((_, i) => i !== idx);
-                              setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, expenses: updated } : t));
-                            }, exp.title)}
-                            className="text-gray-400 hover:text-red-500"
-                            title="删除账单"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     ))}
@@ -780,13 +657,13 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 6: 回忆相册 (可编辑、日期地点、Comment) */}
+              {/* Tab 6: 回忆相册 */}
               {activeTab === 'memories' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="text-xl font-bold tracking-tight">旅途回忆相册</h3>
-                      <p className="text-xs text-[#777] mt-0.5">记录精彩瞬间、日期、地点与心情，支持随时编辑与同步</p>
+                      <p className="text-xs text-[#777] mt-0.5">支持直接上传手机相册照片 (.jpg / .png) 或输入图片链接</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -794,9 +671,9 @@ export default function App() {
                         setMemoryForm({ url: '', date: new Date().toISOString().split('T')[0], location: '', comment: '' });
                         setModalType('memory');
                       }}
-                      className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium"
+                      className="px-4 py-2 bg-[#2C2A29] text-white text-xs rounded-xl font-medium flex items-center gap-1.5"
                     >
-                      + 上传回忆照片
+                      <Camera className="w-4 h-4" /> + 上传回忆照片
                     </button>
                   </div>
 
@@ -809,34 +686,9 @@ export default function App() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                       {currentTrip.memories.map((m, i) => (
                         <div key={m.id || i} className="bg-white p-4 rounded-3xl border border-[#DCD6CC] shadow-xs hover:shadow-md transition flex flex-col justify-between group relative">
-                          <div className="absolute top-6 right-6 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition">
-                            <button 
-                              onClick={() => {
-                                setEditingItem({ index: i, ...m });
-                                setMemoryForm({ url: m.url || m, date: m.date || '', location: m.location || '', comment: m.comment || '' });
-                                setModalType('editMemory');
-                              }}
-                              className="bg-black/60 text-white p-2 rounded-xl hover:bg-amber-600 transition"
-                              title="编辑相片"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button 
-                              onClick={() => confirmAndDelete(() => {
-                                const updatedMemories = currentTrip.memories.filter((_, idx) => idx !== i);
-                                setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, memories: updatedMemories } : t));
-                              }, '这张照片')}
-                              className="bg-black/60 text-white p-2 rounded-xl hover:bg-red-600 transition"
-                              title="删除照片"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
                           <div className="aspect-4/3 rounded-2xl overflow-hidden bg-gray-100 mb-4">
                             <img src={m.url || m} alt="memory" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                           </div>
-
                           <div className="space-y-2 px-1">
                             <div className="flex justify-between items-center text-xs text-[#888]">
                               <span className="flex items-center gap-1 font-medium"><MapPin className="w-3 h-3 text-rose-600"/> {m.location || '未知地点'}</span>
@@ -857,12 +709,12 @@ export default function App() {
         )}
       </main>
 
-      {/* ================= POPUP MODAL TABLES (弹窗表单表格) ================= */}
+      {/* ================= MODALS ================= */}
       {modalType && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-[#DCD6CC] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-scale-up">
             
-            {/* 1. 主页创建新旅程弹窗 */}
+            {/* 新建旅程 */}
             {modalType === 'newTrip' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
@@ -876,7 +728,7 @@ export default function App() {
                   </div>
                   <div>
                     <label className="text-xs text-[#666] block mb-1">目的地</label>
-                    <input type="text" value={newTripForm.destination} onChange={e => setNewTripForm({...newTripForm, destination: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="挪威·特罗姆瑟 (Tromso)" />
+                    <input type="text" value={newTripForm.destination} onChange={e => setNewTripForm({...newTripForm, destination: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="挪威·特罗姆瑟" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -888,23 +740,9 @@ export default function App() {
                       <input type="date" value={newTripForm.endDate} onChange={e => setNewTripForm({...newTripForm, endDate: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">币种</label>
-                      <select value={newTripForm.currency} onChange={e => setNewTripForm({...newTripForm, currency: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm font-bold">
-                        <option value="RM">RM</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">同行人数</label>
-                      <input type="number" value={newTripForm.companions} onChange={e => setNewTripForm({...newTripForm, companions: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                  </div>
                   <div>
-                    <label className="text-xs text-[#666] block mb-1">封面图片链接 (URL)</label>
-                    <input type="text" value={newTripForm.coverImage} onChange={e => setNewTripForm({...newTripForm, coverImage: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://images.unsplash.com/photo-..." />
+                    <label className="text-xs text-[#666] block mb-1">同行伙伴姓名 (用逗号隔开)</label>
+                    <input type="text" value={newTripForm.companionNames.join(', ')} onChange={e => setNewTripForm({...newTripForm, companionNames: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="我, Alex, Sarah" />
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
@@ -918,19 +756,13 @@ export default function App() {
                           startDate: newTripForm.startDate,
                           endDate: newTripForm.endDate,
                           currency: newTripForm.currency,
-                          companions: parseInt(newTripForm.companions) || 1,
+                          companions: newTripForm.companionNames.length || 3,
+                          companionNames: newTripForm.companionNames,
                           coverImage: newTripForm.coverImage,
-                          dailyWeather: {
-                            'Day 1': { temp: '-2°C', condition: '晴朗 ☀️', advice: '气候寒冷，注意保暖。', packing: ['羽绒服', '暖贴'] }
-                          },
-                          flights: [],
-                          hotels: [],
-                          itinerary: { 'Day 1': [{ id: 'd1', time: '14:00', title: '抵达与酒店入住', desc: '休整并熟悉周边环境。', transport: '机场巴士', distance: '市区', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
-                          masterSpots: [
-                            { id: 'ms1', name: '极光观测点', desc: '绝佳北极光欣赏地。', img: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600', mapUrl: 'https://maps.google.com', rednoteUrl: 'https://www.xiaohongshu.com' }
-                          ],
-                          expenses: [],
-                          memories: []
+                          dailyWeather: { 'Day 1': { temp: '-2°C', condition: '晴朗 ☀️', advice: '气候寒冷，注意保暖。', packing: ['羽绒服'] } },
+                          flights: [], hotels: [],
+                          itinerary: { 'Day 1': [{ id: 'd1', time: '14:00', title: '抵达与酒店入住', desc: '休整。', transport: '巴士', distance: '市区', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
+                          masterSpots: [], expenses: [], memories: []
                         };
                         setTrips([newT, ...trips]);
                         setModalType(null);
@@ -945,332 +777,151 @@ export default function App() {
               </>
             )}
 
-            {/* 2. 添加行程弹窗 */}
-            {modalType === 'itinerary' && (
+            {/* 每日行程 - 为此景点添加照片 */}
+            {modalType === 'spotPhoto' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
-                  <h3 className="font-bold text-lg">📝 新增行程详情</h3>
+                  <h3 className="font-bold text-lg">📸 为景点添加/更换照片</h3>
                   <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-[#666] block mb-1">目标天数</label>
-                    <select 
-                      value={activeDayTab} 
-                      onChange={e => setActiveDayTab(e.target.value)}
-                      className="w-full p-3 bg-white border border-[#DCD6CC] rounded-xl text-sm"
-                    >
-                      {Object.keys(currentTrip?.itinerary || {}).map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
+                    <label className="text-xs text-[#666] block mb-1">方式一：从手机/电脑选择本地照片 (.jpg / .png)</label>
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg, image/jpg" 
+                      onChange={e => handleLocalImageUpload(e, (base64Str) => setSpotPhotoForm({ url: base64Str }))}
+                      className="w-full p-2.5 border border-[#DCD6CC] rounded-xl text-xs bg-[#ECE7DF] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#2C2A29] file:text-white hover:file:bg-[#444]"
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">时间</label>
-                      <input type="text" value={itineraryForm.time} onChange={e => setItineraryForm({...itineraryForm, time: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="14:00" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">景点名称</label>
-                      <input type="text" value={itineraryForm.title} onChange={e => setItineraryForm({...itineraryForm, title: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="浅草寺" />
-                    </div>
-                  </div>
+                  <div className="text-center text-xs text-[#888] font-medium">- 或者 -</div>
                   <div>
-                    <label className="text-xs text-[#666] block mb-1">与上一站的距离提示</label>
-                    <input type="text" value={itineraryForm.distance} onChange={e => setItineraryForm({...itineraryForm, distance: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="距上一站步行 10 分钟" />
+                    <label className="text-xs text-[#666] block mb-1">方式二：输入图片网络链接 (URL)</label>
+                    <input type="text" value={spotPhotoForm.url} onChange={e => setSpotPhotoForm({ url: e.target.value })} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://images.unsplash.com/photo-..." />
                   </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">详细交通与乘搭路线 (写明搭什么线、怎么走)</label>
-                    <input type="text" value={itineraryForm.transport} onChange={e => setItineraryForm({...itineraryForm, transport: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="乘搭地铁银座线至浅草站下车..." />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">开放时间</label>
-                      <input type="text" value={itineraryForm.opening} onChange={e => setItineraryForm({...itineraryForm, opening: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="09:00 - 18:00" />
+                  {spotPhotoForm.url && (
+                    <div className="h-32 rounded-2xl overflow-hidden border border-[#DCD6CC] bg-gray-50 flex items-center justify-center">
+                      <img src={spotPhotoForm.url} alt="预览" className="h-full object-contain" />
                     </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">Google Maps 链接</label>
-                      <input type="text" value={itineraryForm.mapUrl} onChange={e => setItineraryForm({...itineraryForm, mapUrl: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://maps.google.com/?q=..." />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">游玩描述 / 备注</label>
-                    <textarea value={itineraryForm.desc} onChange={e => setItineraryForm({...itineraryForm, desc: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="描述..." />
-                  </div>
+                  )}
                   <div className="flex justify-end gap-3 pt-2">
                     <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
                     <button 
                       onClick={() => {
-                        if (!itineraryForm.title) { alert('请填写景点名称'); return; }
-                        const newItem = { id: Date.now().toString(), ...itineraryForm };
-                        const updated = {
-                          ...currentTrip.itinerary,
-                          [activeDayTab]: [...(currentTrip.itinerary[activeDayTab] || []), newItem]
-                        };
-                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updated } : t));
-                        setModalType(null);
-                        triggerToast('✨ 行程添加成功并实时云端同步！');
-                      }}
-                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
-                    >
-                      确认添加
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* 3. 编辑行程弹窗 */}
-            {modalType === 'editItinerary' && (
-              <>
-                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
-                  <h3 className="font-bold text-lg">✏️ 编辑行程详情</h3>
-                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
-                </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">时间</label>
-                      <input type="text" value={itineraryForm.time} onChange={e => setItineraryForm({...itineraryForm, time: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">景点名称</label>
-                      <input type="text" value={itineraryForm.title} onChange={e => setItineraryForm({...itineraryForm, title: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">与上一站距离提示</label>
-                    <input type="text" value={itineraryForm.distance} onChange={e => setItineraryForm({...itineraryForm, distance: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">详细交通与乘搭路线</label>
-                    <input type="text" value={itineraryForm.transport} onChange={e => setItineraryForm({...itineraryForm, transport: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">开放时间</label>
-                      <input type="text" value={itineraryForm.opening} onChange={e => setItineraryForm({...itineraryForm, opening: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">Google Maps 链接</label>
-                      <input type="text" value={itineraryForm.mapUrl} onChange={e => setItineraryForm({...itineraryForm, mapUrl: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">描述</label>
-                    <textarea value={itineraryForm.desc} onChange={e => setItineraryForm({...itineraryForm, desc: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                  </div>
-                  <div className="flex justify-end gap-3 pt-2">
-                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
-                    <button 
-                      onClick={() => {
+                        if (!spotPhotoForm.url) { alert('请上传照片或填写链接'); return; }
                         const dayList = [...currentTrip.itinerary[editingItem.day]];
-                        dayList[editingItem.index] = { ...editingItem, ...itineraryForm };
+                        dayList[editingItem.index] = { ...dayList[editingItem.index], photo: spotPhotoForm.url };
                         const updatedItinerary = { ...currentTrip.itinerary, [editingItem.day]: dayList };
                         setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t));
                         setModalType(null);
-                        triggerToast('✏️ 行程修改成功！');
+                        triggerToast('📸 景点照片更新成功！');
                       }}
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
-                      保存修改
+                      保存照片
                     </button>
                   </div>
                 </div>
               </>
             )}
 
-            {/* 4. 智能推荐景点加入弹窗 */}
-            {modalType === 'scheduleSpot' && spotToSchedule && (
+            {/* 上传回忆相册 */}
+            {(modalType === 'memory' || modalType === 'editMemory') && (
               <>
                 <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
-                  <h3 className="font-bold text-lg">✨ 将推荐景点加入日程</h3>
+                  <h3 className="font-bold text-lg">📸 上传旅途回忆照片</h3>
                   <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 bg-[#ECE7DF] p-3 rounded-2xl border border-[#DCD6CC]">
-                    <img src={spotToSchedule.img} alt="" className="w-16 h-16 rounded-xl object-cover" />
-                    <div>
-                      <h4 className="font-bold text-sm">{spotToSchedule.name}</h4>
-                      <p className="text-xs text-[#666] line-clamp-1">{spotToSchedule.desc}</p>
-                    </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">方式一：从手机/电脑选择本地照片 (.jpg / .png)</label>
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg, image/jpg" 
+                      onChange={e => handleLocalImageUpload(e, (base64Str) => setMemoryForm({...memoryForm, url: base64Str}))}
+                      className="w-full p-2.5 border border-[#DCD6CC] rounded-xl text-xs bg-[#ECE7DF] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#2C2A29] file:text-white hover:file:bg-[#444]"
+                    />
                   </div>
+                  <div className="text-center text-xs text-[#888] font-medium">- 或者 -</div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">方式二：输入图片网络链接 (URL)</label>
+                    <input type="text" value={memoryForm.url} onChange={e => setMemoryForm({...memoryForm, url: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://images.unsplash.com/photo-..." />
+                  </div>
+                  {memoryForm.url && (
+                    <div className="h-28 rounded-2xl overflow-hidden border border-[#DCD6CC] bg-gray-50 flex items-center justify-center">
+                      <img src={memoryForm.url} alt="预览" className="h-full object-contain" />
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-[#666] block mb-1">选择天数</label>
-                      <select value={spotDayTarget} onChange={e => setSpotDayTarget(e.target.value)} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
-                        {Object.keys(currentTrip.itinerary).map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
+                      <label className="text-xs text-[#666] block mb-1">拍摄日期</label>
+                      <input type="date" value={memoryForm.date} onChange={e => setMemoryForm({...memoryForm, date: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
                     </div>
                     <div>
-                      <label className="text-xs text-[#666] block mb-1">游玩时间</label>
-                      <input type="text" value={spotTimeTarget} onChange={e => setSpotTimeTarget(e.target.value)} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="14:00" />
+                      <label className="text-xs text-[#666] block mb-1">拍摄地点</label>
+                      <input type="text" value={memoryForm.location} onChange={e => setMemoryForm({...memoryForm, location: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="浅草寺雷门" />
                     </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">心情评论 / 备注 (Comment)</label>
+                    <textarea value={memoryForm.comment} onChange={e => setMemoryForm({...memoryForm, comment: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="写下当时的心情..." />
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
                     <button 
                       onClick={() => {
-                        const newSpotItem = {
-                          id: Date.now().toString(),
-                          time: spotTimeTarget,
-                          title: spotToSchedule.name,
-                          desc: spotToSchedule.desc,
-                          transport: '建议乘搭公共交通或地铁前往',
-                          distance: '距上一站：智能规划中',
-                          opening: '09:00 - 21:00',
-                          mapUrl: spotToSchedule.mapUrl || 'https://maps.google.com',
-                          photo: spotToSchedule.img
-                        };
-                        const updatedItinerary = {
-                          ...currentTrip.itinerary,
-                          [spotDayTarget]: [...(currentTrip.itinerary[spotDayTarget] || []), newSpotItem]
-                        };
-                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t));
+                        if (!memoryForm.url) { alert('请上传照片或填写链接'); return; }
+                        const newMem = { id: Date.now().toString(), ...memoryForm };
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, memories: [newMem, ...t.memories] } : t);
+                        setTrips(updated);
                         setModalType(null);
-                        triggerToast(`✨ 成功将 "${spotToSchedule.name}" 加入 ${spotDayTarget}！`);
+                        triggerToast('📸 回忆相片上传成功！');
                       }}
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
-                      确认加入
+                      保存相片
                     </button>
                   </div>
                 </div>
               </>
             )}
 
-            {/* 5. 添加航班弹窗 */}
-            {modalType === 'flight' && (
+            {/* 高级记账弹窗（支持分摊人员选择 & 平均/自定义金额） */}
+            {modalType === 'expense' && (
               <>
                 <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
-                  <h3 className="font-bold text-lg">✈️ 添加航班信息</h3>
-                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">航班类型</label>
-                    <select value={flightForm.type} onChange={e => setFlightForm({...flightForm, type: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
-                      <option value="去程">去程</option>
-                      <option value="回程">回程</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">航班号</label>
-                    <input type="text" value={flightForm.flightNo} onChange={e => setFlightForm({...flightForm, flightNo: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="JL 0724" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">日期</label>
-                      <input type="date" value={flightForm.date} onChange={e => setFlightForm({...flightForm, date: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">时间</label>
-                      <input type="text" value={flightForm.time} onChange={e => setFlightForm({...flightForm, time: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="09:15 -> 17:30" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">航线</label>
-                    <input type="text" value={flightForm.route} onChange={e => setFlightForm({...flightForm, route: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="KUL -> NRT" />
-                  </div>
-                  <div className="flex justify-end gap-3 pt-2">
-                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
-                    <button 
-                      onClick={() => {
-                        if (!flightForm.flightNo) { alert('请填写航班号'); return; }
-                        const newF = { id: Date.now().toString(), ...flightForm };
-                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, flights: [...t.flights, newF] } : t));
-                        setModalType(null);
-                        triggerToast('✈️ 航班添加成功！');
-                      }}
-                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
-                    >
-                      确认添加
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* 6. 添加酒店弹窗 */}
-            {modalType === 'hotel' && (
-              <>
-                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
-                  <h3 className="font-bold text-lg">🏨 添加酒店住宿</h3>
-                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">酒店名称</label>
-                    <input type="text" value={hotelForm.name} onChange={e => setHotelForm({...hotelForm, name: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="新宿格拉斯丽酒店" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">地址</label>
-                    <input type="text" value={hotelForm.address} onChange={e => setHotelForm({...hotelForm, address: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="详细地址..." />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">入住日期</label>
-                      <input type="date" value={hotelForm.checkIn} onChange={e => setHotelForm({...hotelForm, checkIn: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">退房日期</label>
-                      <input type="date" value={hotelForm.checkOut} onChange={e => setHotelForm({...hotelForm, checkOut: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-3 pt-2">
-                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
-                    <button 
-                      onClick={() => {
-                        if (!hotelForm.name) { alert('请填写酒店名称'); return; }
-                        const newH = { id: Date.now().toString(), ...hotelForm };
-                        setTrips(trips.map(t => t.id === currentTrip.id ? { ...t, hotels: [...t.hotels, newH] } : t));
-                        setModalType(null);
-                        triggerToast('🏨 酒店添加成功！');
-                      }}
-                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
-                    >
-                      确认添加
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* 7. 多币种记账弹窗 */}
-            {(modalType === 'expense' || modalType === 'editExpense') && (
-              <>
-                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
-                  <h3 className="font-bold text-lg">{modalType === 'expense' ? '💰 多币种记账' : '✏️ 编辑消费账单'}</h3>
+                  <h3 className="font-bold text-lg">💰 多币种记账与高级分摊</h3>
                   <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
                 </div>
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs text-[#666] block mb-1">消费项目名称</label>
-                    <input type="text" value={expenseForm.title} onChange={e => setExpenseForm({...expenseForm, title: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="米其林晚餐" />
+                    <input type="text" value={expenseForm.title} onChange={e => setExpenseForm({...expenseForm, title: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="米其林晚餐 / 门票" />
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-[#666] block mb-1">金额</label>
                       <input type="number" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="450" />
                     </div>
                     <div>
-                      <label className="text-xs text-[#666] block mb-1">币种 (自动换算 RM)</label>
+                      <label className="text-xs text-[#666] block mb-1">币种</label>
                       <select value={expenseForm.currency} onChange={e => setExpenseForm({...expenseForm, currency: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm font-bold">
                         <option value="MYR">MYR (马币)</option>
                         <option value="JPY">JPY (日元)</option>
                         <option value="USD">USD (美元)</option>
-                        <option value="THB">THB (泰铢)</option>
-                        <option value="EUR">EUR (欧元)</option>
-                        <option value="SGD">SGD (新币)</option>
                       </select>
                     </div>
                   </div>
-                  <div className="p-3 bg-[#ECE7DF] rounded-xl text-xs text-emerald-700 font-medium flex justify-between items-center">
-                    <span>实时汇率折算预览：</span>
-                    <span className="font-bold text-sm">≈ RM {convertToRM(expenseForm.amount, expenseForm.currency)}</span>
-                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-[#666] block mb-1">付款人</label>
-                      <input type="text" value={expenseForm.paidBy} onChange={e => setExpenseForm({...expenseForm, paidBy: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="Alex / 我" />
+                      <label className="text-xs text-[#666] block mb-1">谁垫付付款的？</label>
+                      <select value={expenseForm.paidBy} onChange={e => setExpenseForm({...expenseForm, paidBy: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm font-bold">
+                        {(currentTrip.companionNames || ['我', 'Alex', 'Sarah']).map(name => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="text-xs text-[#666] block mb-1">消费类别</label>
@@ -1283,83 +934,112 @@ export default function App() {
                       </select>
                     </div>
                   </div>
+
+                  {/* 分摊设置区域 */}
+                  <div className="p-4 bg-[#ECE7DF] rounded-2xl border border-[#DCD6CC] space-y-3">
+                    <label className="text-xs font-bold text-[#444] block">👥 选择参与分摊的同行伙伴 (可多选)</label>
+                    <div className="flex flex-wrap gap-2">
+                      {(currentTrip.companionNames || ['我', 'Alex', 'Sarah']).map(name => {
+                        const isSelected = expenseForm.splitAmong.includes(name);
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => {
+                              const updated = isSelected 
+                                ? expenseForm.splitAmong.filter(n => n !== name)
+                                : [...expenseForm.splitAmong, name];
+                              setExpenseForm({...expenseForm, splitAmong: updated});
+                            }}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                              isSelected ? 'bg-[#2C2A29] text-white shadow-xs' : 'bg-white text-[#666] border border-[#DCD6CC]'
+                            }`}
+                          >
+                            {isSelected ? <CheckSquare className="w-3.5 h-3.5"/> : <Square className="w-3.5 h-3.5"/>}
+                            {name}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-2 border-t border-[#DCD6CC]">
+                      <label className="text-xs font-bold text-[#444] block mb-1.5">⚖️ 分摊计算模式</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExpenseForm({...expenseForm, splitMode: 'equal'})}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition ${
+                            expenseForm.splitMode === 'equal' ? 'bg-[#2C2A29] text-white shadow-xs' : 'bg-white text-[#666] border border-[#DCD6CC]'
+                          }`}
+                        >
+                          平均分摊 (Equal)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExpenseForm({...expenseForm, splitMode: 'custom'})}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition ${
+                            expenseForm.splitMode === 'custom' ? 'bg-[#2C2A29] text-white shadow-xs' : 'bg-white text-[#666] border border-[#DCD6CC]'
+                          }`}
+                        >
+                          每个人不同数额 (Custom)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 自定义金额输入框 */}
+                    {expenseForm.splitMode === 'custom' && (
+                      <div className="space-y-2 pt-2">
+                        <span className="text-[11px] text-[#666] block">请为每个分摊成员输入各自应承担的金额：</span>
+                        {expenseForm.splitAmong.map(name => (
+                          <div key={name} className="flex items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-[#DCD6CC]">
+                            <span className="text-xs font-bold">{name} 应付金额:</span>
+                            <input 
+                              type="number" 
+                              value={expenseForm.customShares[name] || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setExpenseForm({
+                                  ...expenseForm, 
+                                  customShares: { ...expenseForm.customShares, [name]: val }
+                                });
+                              }}
+                              className="w-28 p-1.5 border border-[#DCD6CC] rounded-lg text-xs text-right"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex justify-end gap-3 pt-2">
                     <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
                     <button 
                       onClick={() => {
                         if (!expenseForm.title || !expenseForm.amount) { alert('请填写完整'); return; }
+                        if (expenseForm.splitAmong.length === 0) { alert('请至少选择一位分摊成员'); return; }
+                        
                         const convertedRM = convertToRM(expenseForm.amount, expenseForm.currency);
-                        if (modalType === 'expense') {
-                          const newExp = { id: Date.now().toString(), title: expenseForm.title, amount: parseFloat(expenseForm.amount), currency: expenseForm.currency, convertedRM, paidBy: expenseForm.paidBy, category: expenseForm.category };
-                          const updated = trips.map(t => t.id === currentTrip.id ? { ...t, expenses: [...t.expenses, newExp] } : t);
-                          setTrips(updated);
-                          triggerToast('💰 记账成功并已同步！');
-                        } else {
-                          const list = [...currentTrip.expenses];
-                          list[editingItem.index] = { ...editingItem, title: expenseForm.title, amount: parseFloat(expenseForm.amount), currency: expenseForm.currency, convertedRM, paidBy: expenseForm.paidBy, category: expenseForm.category };
-                          const updated = trips.map(t => t.id === currentTrip.id ? { ...t, expenses: list } : t);
-                          setTrips(updated);
-                          triggerToast('✏️ 账单修改成功！');
-                        }
+                        const newExp = { 
+                          id: Date.now().toString(), 
+                          title: expenseForm.title, 
+                          amount: parseFloat(expenseForm.amount), 
+                          currency: expenseForm.currency, 
+                          convertedRM, 
+                          paidBy: expenseForm.paidBy, 
+                          category: expenseForm.category,
+                          splitMode: expenseForm.splitMode,
+                          splitAmong: expenseForm.splitAmong,
+                          customShares: expenseForm.customShares
+                        };
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, expenses: [...t.expenses, newExp] } : t);
+                        setTrips(updated);
                         setModalType(null);
+                        triggerToast('💰 记账与分摊设置成功！');
                       }}
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
-                      {modalType === 'expense' ? '确认记账' : '保存修改'}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* 8. 上传或编辑回忆相册弹窗 */}
-            {(modalType === 'memory' || modalType === 'editMemory') && (
-              <>
-                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
-                  <h3 className="font-bold text-lg">{modalType === 'memory' ? '📸 上传旅途回忆照片' : '✏️ 编辑回忆照片'}</h3>
-                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">照片图片链接 (URL)</label>
-                    <input type="text" value={memoryForm.url} onChange={e => setMemoryForm({...memoryForm, url: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://images.unsplash.com/photo-..." />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">拍摄日期</label>
-                      <input type="date" value={memoryForm.date} onChange={e => setMemoryForm({...memoryForm, date: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#666] block mb-1">拍摄地点</label>
-                      <input type="text" value={memoryForm.location} onChange={e => setMemoryForm({...memoryForm, location: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="例如：浅草寺雷门" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#666] block mb-1">心情评论 / 备注 (Comment)</label>
-                    <textarea value={memoryForm.comment} onChange={e => setMemoryForm({...memoryForm, comment: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="写下当时的心情或故事..." />
-                  </div>
-                  <div className="flex justify-end gap-3 pt-2">
-                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
-                    <button 
-                      onClick={() => {
-                        if (!memoryForm.url) { alert('请填写照片链接'); return; }
-                        if (modalType === 'memory') {
-                          const newMem = { id: Date.now().toString(), ...memoryForm };
-                          const updated = trips.map(t => t.id === currentTrip.id ? { ...t, memories: [newMem, ...t.memories] } : t);
-                          setTrips(updated);
-                          triggerToast('📸 回忆相片上传成功！');
-                        } else {
-                          const list = [...currentTrip.memories];
-                          list[editingItem.index] = { ...editingItem, ...memoryForm };
-                          const updated = trips.map(t => t.id === currentTrip.id ? { ...t, memories: list } : t);
-                          setTrips(updated);
-                          triggerToast('✏️ 回忆修改成功并实时同步！');
-                        }
-                        setModalType(null);
-                      }}
-                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
-                    >
-                      {modalType === 'memory' ? '保存相片' : '保存修改'}
+                      确认记账
                     </button>
                   </div>
                 </div>
