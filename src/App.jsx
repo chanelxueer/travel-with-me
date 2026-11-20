@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Calendar, MapPin, DollarSign, CloudSun, Users, 
   Share2, Plus, Trash2, Plane, Hotel, 
-  Sparkles, Camera, BookOpen, Download, Compass, ChevronRight, ArrowLeft, Navigation, ExternalLink, Edit3, X, RefreshCw, ArrowRight, CheckSquare, Square, Briefcase
+  Sparkles, Camera, BookOpen, Download, Compass, ChevronRight, ArrowLeft, Navigation, ExternalLink, Edit3, X, RefreshCw, ArrowRight, CheckSquare, Square, Briefcase, Lock
 } from 'lucide-react';
 
 // ==========================================
@@ -41,9 +41,25 @@ const supabaseRest = {
 };
 
 export default function App() {
+  // 解析 URL 是否带有单旅程 (?trip=xxx) 或按同行伙伴聚合分享参数 (?partner=xxx)
+  const getSharedParamsFromUrl = () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        tripId: params.get('trip') || null,
+        partner: params.get('partner') || null
+      };
+    } catch (e) {
+      return { tripId: null, partner: null };
+    }
+  };
+
+  const initialUrlParams = getSharedParamsFromUrl();
+  const [sharedLockTripId, setSharedLockTripId] = useState(initialUrlParams.tripId);
+  const [sharedPartnerFilter, setSharedPartnerFilter] = useState(initialUrlParams.partner);
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTripId, setSelectedTripId] = useState(null);
+  const [selectedTripId, setSelectedTripId] = useState(initialUrlParams.tripId);
   const [activeTab, setActiveTab] = useState('itinerary');
   const [activeDayTab, setActiveDayTab] = useState('Day 1');
   const [activeWeatherDay, setActiveWeatherDay] = useState('Day 1');
@@ -79,8 +95,9 @@ export default function App() {
   const [memoryForm, setMemoryForm] = useState({ url: '', date: new Date().toISOString().split('T')[0], location: '', comment: '' });
   const [spotPhotoForm, setSpotPhotoForm] = useState({ url: '' });
   const [packingForm, setPackingForm] = useState({ name: '', category: '证件与钱财', assignee: '全员各自携带', qty: 1 });
+  const [newNoticeInput, setNewNoticeInput] = useState('');
 
-  // 默认初始数据
+  // 默认初始数据（包含东京与成都两个示例旅程，方便测试独立分享）
   const defaultInitialTrips = [
     {
       id: '1',
@@ -143,28 +160,15 @@ export default function App() {
               { id: 'sh3', name: '浅草寺开运御守', bought: false },
               { id: 'sh4', name: '舟和芋羊羹', bought: false }
             ]
-          },
-          { 
-            id: 'i4', 
-            time: '15:30', 
-            title: '涩谷 SKY 露天展望台', 
-            desc: '提前预约日落黄金时段门票，360度俯瞰东京铁塔与富士山远景。', 
-            transport: '浅草站搭乘地铁银座线直达涩谷站。', 
-            distance: '距浅草寺约 14km (约35分钟)', 
-            opening: '10:00 - 22:30', 
-            mapUrl: 'https://maps.google.com/?q=Shibuya+Sky', 
-            photo: '',
-            photoRefs: [],
-            shoppingList: []
           }
         ],
-        'Day 3': []
+        'Day 3': [],
+        'Day 4': [],
+        'Day 5': []
       },
       masterSpots: [
         { id: 's1', name: '富士山河口湖 · 罗森便利店机位', desc: '小红书爆火打卡点，拍摄富士山同框经典大片。', img: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=600', mapUrl: 'https://maps.google.com/?q=Kawaguchiko', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=河口湖富士山' },
-        { id: 's2', name: '东京迪士尼海洋 (Tokyo DisneySea)', desc: '全球唯一以海洋为主题的迪士尼乐园，新园区梦幻泉乡必打卡。', img: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=600', mapUrl: 'https://maps.google.com/?q=Tokyo+DisneySea', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=东京迪士尼海洋' },
-        { id: 's3', name: '筑地场外市场海鲜早市', desc: '现切蓝鳍金枪鱼盖饭、厚蛋烧与海胆刺身盛宴。', img: 'https://images.unsplash.com/photo-1553621042-f6e147245754?w=600', mapUrl: 'https://maps.google.com/?q=Tsukiji+Outer+Market', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=筑地市场美食' },
-        { id: 's4', name: '表参道 & 原宿潮流买手店街区', desc: '建筑美学与日本设计师品牌聚集地，咖啡馆林立。', img: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600', mapUrl: 'https://maps.google.com/?q=Omotesando+Tokyo', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=东京表参道探店' }
+        { id: 's2', name: '东京迪士尼海洋 (Tokyo DisneySea)', desc: '全球唯一以海洋为主题的迪士尼乐园，新园区梦幻泉乡必打卡。', img: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=600', mapUrl: 'https://maps.google.com/?q=Tokyo+DisneySea', rednoteUrl: 'https://www.xiaohongshu.com/search_result?keyword=东京迪士尼海洋' }
       ],
       expenses: [
         { id: 'e1', title: '吉隆坡-东京往返机票', amount: 2400, currency: 'MYR', convertedRM: '2400.00', paidBy: 'Alex', splitMode: 'equal', splitAmong: ['我', 'Alex', 'Sarah'], customShares: {}, category: '交通' },
@@ -173,15 +177,65 @@ export default function App() {
       memories: [
         { id: 'm1', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=600', date: '2026-12-25', location: '新宿歌舞伎町', comment: '第一顿深夜串烧，霓虹灯下的东京氛围感拉满！' }
       ],
+      preTripNotices: [
+        '提前填写 Visit Japan Web（入境审查与海关申报二维码截图保存）',
+        '准备 Suica / ICOCA 交通卡（iPhone 钱包可直接开通或抵达机场办理）',
+        '确认护照有效期大于 6 个月，并开通国际漫游或购买日本 eSIM / Wi-Fi'
+      ],
       packingList: [
         { id: 'p1', name: '护照 (有效期大于6个月) & Visit Japan Web 二维码', category: '证件与钱财', assignee: '全员各自携带', qty: 1, packed: true },
-        { id: 'p2', name: '日元现金 & 国际免手续费信用卡', category: '证件与钱财', assignee: '全员各自携带', qty: 1, packed: false },
-        { id: 'p3', name: '防风厚羽绒服 & 发热保暖内衣', category: '衣物穿搭', assignee: '全员各自携带', qty: 2, packed: false },
-        { id: 'p4', name: '日本双扁脚转换插头 & 多口快充排插', category: '电子数码', assignee: 'Alex', qty: 2, packed: true },
-        { id: 'p5', name: '感冒药、肠胃药与创可贴急救包', category: '药品与杂物', assignee: 'Sarah', qty: 1, packed: false }
+        { id: 'p2', name: '日元现金 & 国际免手续费信用卡', category: '证件与钱财', assignee: '全员各自携带', qty: 1, packed: false }
+      ]
+    },
+    {
+      id: '2',
+      title: '中国成都 4天3夜大熊猫与川味火锅之旅',
+      destination: '中国·成都 (Chengdu)',
+      startDate: '2027-03-12',
+      endDate: '2027-03-15',
+      currency: 'RM',
+      companions: 2,
+      companionNames: ['我', 'C'],
+      coverImage: 'https://images.unsplash.com/photo-1545893835-abaa50cbe628?w=800',
+      dailyWeather: {
+        'Day 1': { temp: '16°C / 9°C', condition: '阴天 ☁️', advice: '成都春季微凉，建议穿薄毛衣或卫衣加风衣。', packing: ['风衣外套', '肠胃药'] }
+      },
+      flights: [],
+      hotels: [
+        { id: 'h_cd1', name: '成都太古里博舍酒店', address: '成都市锦江区笔帖式街81号', checkIn: '2027-03-12', checkOut: '2027-03-15' }
+      ],
+      itinerary: {
+        'Day 1': [
+          {
+            id: 'cd_i1',
+            time: '14:00',
+            title: '春熙路 & 成都太古里打卡',
+            desc: '打卡IFS爬墙大熊猫，逛太古里买手店，晚上吃正宗牛油火锅。',
+            transport: '地铁2号线/3号线春熙路站直达',
+            distance: '距酒店步行 3 分钟',
+            opening: '10:00 - 22:00',
+            mapUrl: 'https://maps.google.com/?q=Taikoo+Li+Chengdu',
+            photo: '',
+            photoRefs: [],
+            shoppingList: [
+              { id: 'cd_s1', name: '熊猫花花周边玩偶', bought: false }
+            ]
+          }
+        ]
+      },
+      masterSpots: [],
+      expenses: [],
+      memories: [],
+      preTripNotices: [
+        '提前下载并注册支付宝 / 微信国际版，绑定常用信用卡并完成实名认证',
+        '确认出行证件与酒店入住人姓名一致，提前保存电子行程单'
+      ],
+      packingList: [
+        { id: 'cd_p1', name: '支付宝/微信国际版绑定信用卡', category: '证件与钱财', assignee: '全员各自携带', qty: 1, packed: false }
       ]
     }
   ];
+
   // 连接 Supabase REST API 并支持优雅降级至 localStorage
   useEffect(() => {
     let isMounted = true;
@@ -190,7 +244,9 @@ export default function App() {
       if (!SUPABASE_URL || !SUPABASE_KEY) {
         const saved = localStorage.getItem('travel_with_me_fallback_v18');
         if (isMounted) {
-          setTrips(saved ? JSON.parse(saved) : defaultInitialTrips);
+          const loadedTrips = saved ? JSON.parse(saved) : defaultInitialTrips;
+          setTrips(loadedTrips);
+          initSharedTripFirstDay(loadedTrips);
           setLoading(false);
         }
         return;
@@ -200,19 +256,45 @@ export default function App() {
       try {
         const cloudData = await supabaseRest.fetchTrips();
         if (cloudData) {
-          if (isMounted) setTrips(cloudData);
+          if (isMounted) {
+            const normalizedCloud = cloudData.map(t => ({
+              ...t,
+              itinerary: syncItineraryWithDateRange(t.itinerary, t.startDate, t.endDate)
+            }));
+            setTrips(normalizedCloud);
+            initSharedTripFirstDay(normalizedCloud);
+          }
           localStorage.setItem('travel_with_me_fallback_v18', JSON.stringify(cloudData));
-        } else {
+      } else {
           await supabaseRest.upsertTrips(defaultInitialTrips);
-          if (isMounted) setTrips(defaultInitialTrips);
+          if (isMounted) {
+            setTrips(defaultInitialTrips);
+            initSharedTripFirstDay(defaultInitialTrips);
+          }
         }
       } catch (err) {
         const saved = localStorage.getItem('travel_with_me_fallback_v18');
-        if (isMounted) setTrips(saved ? JSON.parse(saved) : defaultInitialTrips);
+        if (isMounted) {
+          const loadedTrips = saved ? JSON.parse(saved) : defaultInitialTrips;
+          setTrips(loadedTrips);
+          initSharedTripFirstDay(loadedTrips);
+        }
       } finally {
         if (isMounted) {
           setIsSyncing(false);
           setLoading(false);
+        }
+      }
+    }
+
+    function initSharedTripFirstDay(allTrips) {
+      const { tripId } = getSharedParamsFromUrl();
+      if (tripId) {
+        const target = allTrips.find(t => t.id === tripId);
+        if (target) {
+          const firstDay = Object.keys(target.itinerary || {})[0] || 'Day 1';
+          setActiveDayTab(firstDay);
+          setActiveWeatherDay(firstDay);
         }
       }
     }
@@ -243,7 +325,11 @@ export default function App() {
     };
   }, []);
 
-  // 统一保存状态到本地和 Supabase 云端
+  const triggerToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  };
+
   const saveTripsToCloud = async (newTrips) => {
     setTrips(newTrips);
     setIsSyncing(true);
@@ -253,27 +339,60 @@ export default function App() {
       try {
         await supabaseRest.upsertTrips(newTrips);
       } catch (err) {
-        // 静默降级至本地存储，确保预览体验不中断
+        triggerToast('⚠️ 云端同步失败，已保存至本地');
       } finally {
-        setTimeout(() => setIsSyncing(false), 350);
+        setTimeout(() => setIsSyncing(false), 400);
       }
     } else {
-      setTimeout(() => setIsSyncing(false), 250);
+      setTimeout(() => setIsSyncing(false), 300);
     }
   };
 
   const currentTrip = trips.find(t => t.id === selectedTripId);
 
-  const triggerToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
+  // 智能生成分享链接：如果在某个具体旅程内部，生成单旅程链接；如果在伙伴专属模式下，复制该伙伴专属链接
+  const handleShareLink = () => {
+    const urlObj = new URL(window.location.href);
+    if (sharedPartnerFilter) {
+      urlObj.searchParams.delete('trip');
+      urlObj.searchParams.set('partner', sharedPartnerFilter);
+      const shareUrl = urlObj.toString();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).catch(() => {});
+      }
+      triggerToast(`🔒 已复制「${sharedPartnerFilter}」的专属多旅程聚合链接！`);
+    } else if (selectedTripId && currentTrip) {
+      urlObj.searchParams.delete('partner');
+      urlObj.searchParams.set('trip', selectedTripId);
+      const shareUrl = urlObj.toString();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).catch(() => {});
+      }
+      const partners = (currentTrip.companionNames || []).filter(n => n !== '我').join(' & ') || '同行伙伴';
+      triggerToast(`🔒 已复制「${currentTrip.title}」单旅程专属链接！发给 ${partners} 后仅可见此行程。`);
+    } else {
+      urlObj.searchParams.delete('trip');
+      urlObj.searchParams.delete('partner');
+      const shareUrl = urlObj.toString();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).catch(() => {});
+      }
+      triggerToast('🔗 主手账完整链接已复制！如需按伙伴隔离分享，请点击主页“按同行伙伴专属分享”。');
+    }
   };
 
-  const handleShareLink = () => {
+  // 生成指定同行伙伴的专属多旅程聚合链接
+  const handleShareByPartner = (partnerName) => {
+    const urlObj = new URL(window.location.href);
+    urlObj.searchParams.delete('trip');
+    urlObj.searchParams.set('partner', partnerName);
+    const shareUrl = urlObj.toString();
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(window.location.href).catch(() => {});
+      navigator.clipboard.writeText(shareUrl).catch(() => {});
     }
-    triggerToast('🔗 专属云端同行链接已复制！发给好友即可实现多端实时同步');
+    const matchedCount = trips.filter(t => (t.companionNames || []).includes(partnerName)).length;
+    setModalType(null);
+    triggerToast(`🔒 已复制「${partnerName}」的专属分享链接！对方打开后将看到与 TA 相关的全部 ${matchedCount} 个旅程，看不到其他私人行程。`);
   };
 
   const getDaysLeft = (startDateStr) => {
@@ -283,9 +402,18 @@ export default function App() {
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const upcomingTrips = trips.filter(t => t.endDate >= todayStr);
+  // 如果是按同行伙伴过滤模式 (?partner=xxx)，只展示包含该伙伴的旅程；否则展示全部
+  const visibleTrips = sharedPartnerFilter
+    ? trips.filter(t => (t.companionNames || []).includes(sharedPartnerFilter))
+    : trips;
+  const upcomingTrips = visibleTrips.filter(t => t.endDate >= todayStr);
 
-  // 自定义二次确认删除对话框（避免浏览器沙箱拦截 window.confirm）
+  // 提取所有同行伙伴名单（排除“我”）用于快捷选择分享
+  const allCompanionPartners = Array.from(
+    new Set(trips.flatMap(t => t.companionNames || []).filter(name => name && name !== '我'))
+  );
+
+  // 自定义二次确认删除对话框
   const requestDelete = (deleteAction, name = '此项') => {
     setConfirmDialog({
       title: '确认删除操作',
@@ -333,6 +461,78 @@ export default function App() {
     const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, masterSpots: shuffled } : t);
     saveTripsToCloud(updatedTrips);
     triggerToast('🔄 已为您换一批智能推荐景点！');
+  };
+
+  // 根据开始与结束日期计算总天数（至少 1 天，最多 60 天防误操作）
+  const calculateTripDayCount = (startDateStr, endDateStr) => {
+    if (!startDateStr || !endDateStr) return 1;
+    const start = new Date(`${startDateStr}T00:00:00`);
+    const end = new Date(`${endDateStr}T00:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 1;
+    const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.min(Math.max(diffDays, 1), 60);
+  };
+
+  // 根据开始日期与第几个 Day（从 1 开始）推算对应的月-日字符串（例如 03-12）
+  const getDayDateLabel = (startDateStr, dayNumber) => {
+    if (!startDateStr || !dayNumber || dayNumber < 1) return '';
+    const base = new Date(`${startDateStr}T00:00:00`);
+    if (Number.isNaN(base.getTime())) return '';
+    base.setDate(base.getDate() + (dayNumber - 1));
+    const mm = String(base.getMonth() + 1).padStart(2, '0');
+    const dd = String(base.getDate()).padStart(2, '0');
+    return `${mm}-${dd}`;
+  };
+
+  // 根据日期范围同步更新 itinerary 对象中的 Day 1 ~ Day N（保留已有行程与额外自定义天数）
+  const syncItineraryWithDateRange = (existingItinerary, startDateStr, endDateStr) => {
+    const dayCount = calculateTripDayCount(startDateStr, endDateStr);
+    const nextItinerary = {};
+    const standardDayKeys = new Set();
+
+    for (let i = 1; i <= dayCount; i++) {
+      const dayKey = `Day ${i}`;
+      standardDayKeys.add(dayKey);
+      nextItinerary[dayKey] = Array.isArray(existingItinerary?.[dayKey])
+        ? [...existingItinerary[dayKey]]
+        : [];
+    }
+
+    // 保留超出默认 Day 1..N 的额外自定义天数（如用户手动新增的 Day 6 等）
+    Object.entries(existingItinerary || {}).forEach(([key, items]) => {
+      if (!standardDayKeys.has(key) && Array.isArray(items) && items.length > 0) {
+        nextItinerary[key] = [...items];
+      }
+    });
+
+    return nextItinerary;
+  };
+
+  // 自动将指定旅程的 itinerary 按起止日期同步更新，并自动校验当前选中的 Day 标签
+  const autoApplyDateRangeToTrip = (tripId, nextStartDate, nextEndDate) => {
+    const dayCount = calculateTripDayCount(nextStartDate, nextEndDate);
+    setTrips(prevTrips => {
+      const updatedTrips = prevTrips.map(t => {
+        if (t.id !== tripId) return t;
+        const syncedItinerary = syncItineraryWithDateRange(t.itinerary, nextStartDate, nextEndDate);
+        if (t.id === selectedTripId && !syncedItinerary[activeDayTab]) {
+          setActiveDayTab('Day 1');
+          setActiveWeatherDay('Day 1');
+        }
+        return {
+          ...t,
+          startDate: nextStartDate,
+          endDate: nextEndDate,
+          itinerary: syncedItinerary
+        };
+      });
+      localStorage.setItem('travel_with_me_fallback_v18', JSON.stringify(updatedTrips));
+      if (SUPABASE_URL && SUPABASE_KEY) {
+        supabaseRest.upsertTrips(updatedTrips).catch(() => {});
+      }
+      return updatedTrips;
+    });
+    return dayCount;
   };
 
   // 导出精美 PDF 手账报告
@@ -503,7 +703,7 @@ export default function App() {
     <div className="min-h-screen bg-[#ECE7DF] text-[#2C2A29] font-sans antialiased pb-20">
       {/* 顶部全局消息提示 */}
       {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-[#2C2A29] text-[#FDFBF7] px-5 py-3 rounded-2xl shadow-2xl text-sm flex items-center gap-3 border border-white/10">
+        <div className="fixed top-5 right-5 z-50 bg-[#2C2A29] text-[#FDFBF7] px-5 py-3 rounded-2xl shadow-2xl text-sm flex items-center gap-3 border border-white/10 max-w-md">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
           <span>{toast}</span>
         </div>
@@ -512,7 +712,12 @@ export default function App() {
       {/* 顶栏导航 */}
       <header className="bg-white/95 backdrop-blur-md border-b border-[#DCD6CC] sticky top-0 z-40 px-4 sm:px-6 py-4 shadow-xs">
         <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-3">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedTripId(null)}>
+          <div 
+            className={`flex items-center gap-3 ${sharedLockTripId ? 'cursor-default' : 'cursor-pointer'}`} 
+            onClick={() => {
+              if (!sharedLockTripId) setSelectedTripId(null);
+            }}
+          >
             <div className="w-11 h-11 rounded-2xl bg-[#2C2A29] text-[#FDFBF7] flex items-center justify-center shadow-md shrink-0">
               <Compass className="w-6 h-6" />
             </div>
@@ -520,34 +725,46 @@ export default function App() {
               <h1 className="text-xl font-bold tracking-tight text-[#1A1817]">Travel with Me</h1>
               <div className="flex items-center gap-2 text-xs text-emerald-700 font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                {isSyncing ? '云端正在同步...' : 'Supabase 云端实时同步已连接'}
+                {sharedLockTripId
+                  ? '单旅程专属访客模式 (已隔离其他私人行程)'
+                  : sharedPartnerFilter
+                  ? `「${sharedPartnerFilter}」的专属同行空间 (仅显示与 TA 相关的旅程)`
+                  : (isSyncing ? '云端正在同步...' : 'Supabase 云端实时同步已连接')}
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {selectedTripId && (
               <>
                 <button 
                   onClick={handleExportPDF}
-                  className="px-4 py-2 bg-[#E2DCD2] text-[#2C2A29] text-xs font-bold rounded-2xl hover:bg-[#D6CEC2] transition flex items-center gap-1.5 shadow-xs"
+                  className="px-3.5 py-2 bg-[#E2DCD2] text-[#2C2A29] text-xs font-bold rounded-2xl hover:bg-[#D6CEC2] transition flex items-center gap-1.5 shadow-xs"
                   title="导出精美 PDF 手账报告"
                 >
-                  <Download className="w-4 h-4" /> 导出 PDF 报告
+                  <Download className="w-4 h-4" /> 导出 PDF
                 </button>
-                <button 
-                  onClick={() => setSelectedTripId(null)}
-                  className="px-4 py-2 bg-[#E2DCD2] text-[#2C2A29] text-xs sm:text-sm rounded-2xl font-medium hover:bg-[#D6CEC2] transition flex items-center gap-1.5"
-                >
-                  <ArrowLeft className="w-4 h-4" /> 返回主页
-                </button>
+                {/* 如果是单旅程锁死模式 (?trip=xxx)，隐藏返回主页；如果是伙伴多旅程聚合模式 (?partner=xxx)，允许返回该伙伴的专属主页切换旅程 */}
+                {!sharedLockTripId && (
+                  <button 
+                    onClick={() => setSelectedTripId(null)}
+                    className="px-4 py-2 bg-[#E2DCD2] text-[#2C2A29] text-xs sm:text-sm rounded-2xl font-medium hover:bg-[#D6CEC2] transition flex items-center gap-1.5"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> {sharedPartnerFilter ? `返回 ${sharedPartnerFilter} 的专属主页` : '返回主页'}
+                  </button>
+                )}
               </>
             )}
             <button 
               onClick={handleShareLink}
               className="px-4 py-2.5 bg-[#2C2A29] text-[#FDFBF7] text-xs sm:text-sm rounded-2xl font-medium hover:bg-[#44403D] transition flex items-center gap-2 shadow-sm"
             >
-              <Share2 className="w-4 h-4" /> 分享同行链接
+              <Share2 className="w-4 h-4" /> 
+              {sharedPartnerFilter
+                ? `复制 ${sharedPartnerFilter} 专属链接`
+                : selectedTripId
+                ? '分享此行程给同行伙伴'
+                : '分享主手账链接'}
             </button>
           </div>
         </div>
@@ -560,38 +777,55 @@ export default function App() {
             <div className="bg-white border border-[#DCD6CC] rounded-3xl p-8 sm:p-12 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div>
                 <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2DCD2] text-[#444] text-xs font-semibold mb-3">
-                  ✨ Supabase 实时协同旅行手账
+                  {sharedPartnerFilter
+                    ? `🔒 专属同行主页 · 仅展示「${sharedPartnerFilter}」参与的旅行计划`
+                    : '✨ Supabase 实时协同旅行手账 · 支持按同行人或单旅程隔离分享'}
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">
-                  带着热情与手账，去探索世界吧。
+                  {sharedPartnerFilter
+                    ? `欢迎，${sharedPartnerFilter}！这是我们的专属旅行手账。`
+                    : '带着热情与手账，去探索世界吧。'}
                 </h2>
                 <p className="text-sm text-[#666] mt-2.5 max-w-xl leading-relaxed">
-                  多端实时云同步：智能动态天气绑定、行李打包勾选清单、一键导出精美 PDF 报告、航班酒店与高级 AA 制记账清算。
+                  {sharedPartnerFilter
+                    ? `当前视图已自动聚合所有与你同行的 ${upcomingTrips.length} 个旅行计划，你可以随时点击进入查看与协同编辑。`
+                    : '点击右侧“按同行伙伴专属分享”选择任意伙伴，系统将自动打包与 TA 同行的所有旅程生成专属链接，其他人的私人旅程完全不可见。'}
                 </p>
               </div>
-              <button 
-                onClick={() => {
-                  setNewTripForm({ 
-                    title: '', 
-                    destination: '日本·北海道 (Hokkaido)', 
-                    startDate: '2027-01-10', 
-                    endDate: '2027-01-15', 
-                    currency: 'RM', 
-                    companions: 3, 
-                    companionNames: ['我', 'Alex', 'Sarah'], 
-                    coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' 
-                  });
-                  setModalType('newTrip');
-                }}
-                className="px-6 py-3.5 bg-[#2C2A29] text-[#FDFBF7] text-sm rounded-2xl font-bold hover:bg-[#444] transition shadow-md flex items-center gap-2 whitespace-nowrap"
-              >
-                <Plus className="w-5 h-5" /> 立即规划新旅程
-              </button>
+              {!sharedPartnerFilter && (
+                <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                  <button 
+                    onClick={() => setModalType('shareByPartner')}
+                    className="px-5 py-3.5 bg-[#ECE7DF] text-[#2C2A29] border border-[#DCD6CC] text-sm rounded-2xl font-bold hover:bg-[#E2DCD2] transition shadow-xs flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <Users className="w-4 h-4 text-amber-800" /> 按同行伙伴专属分享
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setNewTripForm({ 
+                        title: '', 
+                        destination: '日本·北海道 (Hokkaido)', 
+                        startDate: '2027-01-10', 
+                        endDate: '2027-01-15', 
+                        currency: 'RM', 
+                        companions: 3, 
+                        companionNames: ['我', 'Alex', 'Sarah'], 
+                        coverImage: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=800' 
+                      });
+                      setModalType('newTrip');
+                    }}
+                    className="px-6 py-3.5 bg-[#2C2A29] text-[#FDFBF7] text-sm rounded-2xl font-bold hover:bg-[#444] transition shadow-md flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <Plus className="w-5 h-5" /> 立即规划新旅程
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
               <h3 className="text-xl font-bold tracking-tight text-[#1A1817] flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-700" /> 即将来临的旅行计划
+                <Calendar className="w-5 h-5 text-amber-700" /> 
+                {sharedPartnerFilter ? `与「${sharedPartnerFilter}」同行的旅行计划 (${upcomingTrips.length})` : '即将来临的旅行计划'}
               </h3>
 
               {upcomingTrips.length === 0 ? (
@@ -619,11 +853,33 @@ export default function App() {
                           <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold text-[#2C2A29] shadow-sm">
                             距离出发还有 {daysLeft > 0 ? `${daysLeft} 天` : '就是今天！'}
                           </div>
+                          <div className="absolute bottom-3 left-4 bg-black/70 backdrop-blur-xs text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-amber-300" />
+                            同行：{(trip.companionNames || []).join(' · ')}
+                          </div>
                         </div>
                         <div className="p-6 space-y-3">
-                          <span className="inline-block text-xs font-semibold text-[#555] tracking-wide uppercase bg-[#E2DCD2] px-3 py-1 rounded-full">
-                            {trip.destination}
-                          </span>
+                          <div className="flex justify-between items-center gap-2">
+                            <span className="inline-block text-xs font-semibold text-[#555] tracking-wide uppercase bg-[#E2DCD2] px-3 py-1 rounded-full">
+                              {trip.destination}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const urlObj = new URL(window.location.href);
+                                urlObj.searchParams.set('trip', trip.id);
+                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                  navigator.clipboard.writeText(urlObj.toString()).catch(() => {});
+                                }
+                                const partners = (trip.companionNames || []).filter(n => n !== '我').join(' & ') || '同行伙伴';
+                                triggerToast(`🔒 已复制「${trip.title}」专属分享链接！发给 ${partners} 仅可见此行程。`);
+                              }}
+                              className="text-xs bg-[#ECE7DF] hover:bg-[#2C2A29] hover:text-white text-[#2C2A29] px-3 py-1 rounded-full font-semibold transition flex items-center gap-1 border border-[#DCD6CC]"
+                              title="复制仅限此旅程的专属分享链接"
+                            >
+                              <Share2 className="w-3 h-3" /> 单独分享此行程
+                            </button>
+                          </div>
                           <h4 className="text-xl font-bold text-[#1A1817] group-hover:text-amber-700 transition">{trip.title}</h4>
                           <div className="flex justify-between items-center text-sm text-[#777] pt-3 border-t border-[#ECE7DF]">
                             <span>{trip.startDate} ~ {trip.endDate}</span>
@@ -639,6 +895,25 @@ export default function App() {
               )}
             </div>
           </div>
+        ) : !currentTrip ? (
+          /* 专属分享链接无效或行程已删除的提示 */
+          <div className="bg-white border border-[#DCD6CC] rounded-3xl p-12 text-center space-y-4">
+            <Lock className="w-12 h-12 text-amber-700 mx-auto" />
+            <h3 className="text-xl font-bold text-[#1A1817]">未找到该专属分享旅程</h3>
+            <p className="text-sm text-[#666]">该分享链接对应的行程可能已被删除或链接不完整。</p>
+            <button
+              onClick={() => {
+                const urlObj = new URL(window.location.href);
+                urlObj.searchParams.delete('trip');
+                window.history.replaceState({}, '', urlObj.toString());
+                setSharedLockTripId(null);
+                setSelectedTripId(null);
+              }}
+              className="px-5 py-2.5 bg-[#2C2A29] text-white text-xs font-bold rounded-xl"
+            >
+              返回主页
+            </button>
+          </div>
         ) : (
           /* ================= 详情页视图 ================= */
           <div className="space-y-8">
@@ -646,9 +921,14 @@ export default function App() {
               {/* 顶部旅程概览 */}
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-8 border-b border-[#DCD6CC]">
                 <div>
-                  <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2DCD2] text-[#444] text-xs font-semibold mb-3 tracking-wide">
-                    {currentTrip.destination}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2DCD2] text-[#444] text-xs font-semibold tracking-wide">
+                      {currentTrip.destination}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-semibold">
+                      <Lock className="w-3 h-3" /> 独立权限隔离：仅限本行程同行伙伴可见
+                    </span>
+                  </div>
                   
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[#1A1817]">{currentTrip.title}</h2>
@@ -732,6 +1012,8 @@ export default function App() {
                     <div className="flex gap-2">
                       {Object.keys(currentTrip.itinerary || {}).map(dayKey => {
                         const hasItems = (currentTrip.itinerary[dayKey] || []).length > 0;
+                        const dayNumMatch = /^Day\s+(\d+)$/i.exec(dayKey.trim());
+                        const dateLabel = dayNumMatch ? getDayDateLabel(currentTrip.startDate, parseInt(dayNumMatch[1], 10)) : '';
                         return (
                           <button
                             key={dayKey}
@@ -740,7 +1022,7 @@ export default function App() {
                               activeDayTab === dayKey ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D6CEC2]'
                             }`}
                           >
-                            {dayKey}
+                            <span>{dayKey}{dateLabel ? ` (${dateLabel})` : ''}</span>
                             <span className={`w-2 h-2 rounded-full ${hasItems ? 'bg-emerald-400' : 'bg-gray-400'}`} title={hasItems ? '已有行程并激活天气预报' : '行程为空，无天气预报'}></span>
                           </button>
                         );
@@ -829,7 +1111,6 @@ export default function App() {
                           {/* 打算拍的照片参考 & 打算买的东西清单 */}
                           {((item.photoRefs && item.photoRefs.length > 0) || (item.shoppingList && item.shoppingList.length > 0)) && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                              {/* 拍照参考预览 */}
                               {item.photoRefs && item.photoRefs.length > 0 && (
                                 <div className="bg-white p-3.5 rounded-2xl border border-[#DCD6CC] space-y-2">
                                   <div className="flex justify-between items-center">
@@ -859,7 +1140,6 @@ export default function App() {
                                 </div>
                               )}
 
-                              {/* 打算买的东西清单 (支持直接打勾) */}
                               {item.shoppingList && item.shoppingList.length > 0 && (
                                 <div className="bg-white p-3.5 rounded-2xl border border-[#DCD6CC] space-y-2">
                                   <div className="flex justify-between items-center">
@@ -945,6 +1225,8 @@ export default function App() {
 
               {/* Tab 2: 行李清单与打勾勾选 */}
               {activeTab === 'packing' && (() => {
+                const notices = currentTrip.preTripNotices || [];
+                const isJapanTrip = (currentTrip.destination || '').includes('日本') || (currentTrip.title || '').includes('日本');
                 const list = currentTrip.packingList || [];
                 const totalCount = list.length;
                 const packedCount = list.filter(item => item.packed).length;
@@ -953,126 +1235,224 @@ export default function App() {
                 const filteredList = packingFilter === '全部' ? list : list.filter(item => item.category === packingFilter);
 
                 return (
-                  <div className="mt-8 space-y-6">
-                    <div className="flex justify-between items-center flex-wrap gap-4">
-                      <div>
-                        <h3 className="text-xl font-bold tracking-tight">行李清单与同行分工打勾勾选</h3>
-                        <p className="text-xs text-[#777] mt-0.5">点击方框即可打勾标记“已打包”，支持分配负责人并实时同步</p>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setEditingItem(null);
-                          setPackingForm({ name: '', category: '证件与钱财', assignee: '全员各自携带', qty: 1 });
-                          setModalType('packing');
-                        }}
-                        className="px-4 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-medium flex items-center gap-1.5 shadow-sm hover:bg-[#444]"
-                      >
-                        <Plus className="w-4 h-4" /> 添加行李物品
-                      </button>
-                    </div>
-
-                    {/* 打包进度条 */}
-                    <div className="p-6 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-bold text-[#1A1817]">🧳 当前行李打包完成度</span>
-                        <span className="text-sm font-extrabold text-emerald-700">
-                          {packedCount} / {totalCount} 项已完成 ({progressPct}%)
-                        </span>
-                      </div>
-                      <div className="w-full h-3 bg-white rounded-full overflow-hidden border border-[#DCD6CC]">
-                        <div 
-                          className="h-full bg-emerald-600 transition-all duration-500 rounded-full"
-                          style={{ width: `${progressPct}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* 分类筛选 */}
-                    <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC]">
-                      {categories.map(cat => (
-                        <button
-                          key={cat}
-                          onClick={() => setPackingFilter(cat)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                            packingFilter === cat ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D6CEC2]'
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* 物品列表 */}
-                    {filteredList.length === 0 ? (
-                      <div className="p-10 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] text-center text-sm text-[#777]">
-                        该分类下暂无行李物品，点击右上角“添加行李物品”开始准备吧！
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredList.map(item => (
-                          <div 
-                            key={item.id} 
-                            className={`p-4 rounded-2xl border transition flex items-center justify-between gap-4 ${
-                              item.packed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-[#ECE7DF] border-[#DCD6CC]'
-                            }`}
+                  <div className="mt-8 space-y-8">
+                    {/* 旅行前须知 */}
+                    <div className="p-6 rounded-3xl bg-amber-50/70 border border-amber-200 space-y-4">
+                      <div className="flex justify-between items-start flex-wrap gap-3">
+                        <div>
+                          <h3 className="text-lg font-bold text-[#1A1817] flex items-center gap-2">
+                            📌 旅行前须知 (Pre-Trip Checklist)
+                          </h3>
+                          <p className="text-xs text-[#666] mt-0.5">
+                            出发前提前完成的手续与必备事项{isJapanTrip ? '（如日本行程建议确认 Suica、Visit Japan Web）' : ''}
+                          </p>
+                        </div>
+                        {notices.length === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const presetNotices = isJapanTrip
+                                ? [
+                                    '提前填写 Visit Japan Web（入境审查与海关申报二维码截图保存）',
+                                    '准备 Suica / ICOCA 交通卡（iPhone 钱包可直接开通或抵达机场办理）',
+                                    '确认护照有效期大于 6 个月，并开通国际漫游或购买日本 eSIM / Wi-Fi'
+                                  ]
+                                : [
+                                    '确认护照/证件有效期大于 6 个月，提前准备签证与电子行程单',
+                                    '开通国际漫游或购买目的地流量卡/eSIM，确认支付方式可用'
+                                  ];
+                              const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, preTripNotices: presetNotices } : t);
+                              saveTripsToCloud(updatedTrips);
+                              triggerToast('📌 已一键填入参考旅行前须知！');
+                            }}
+                            className="px-3.5 py-1.5 bg-white text-[#2C2A29] border border-amber-300 text-xs font-bold rounded-xl hover:bg-amber-100 transition"
                           >
-                            <div 
-                              onClick={() => {
-                                const updatedList = list.map(p => p.id === item.id ? { ...p, packed: !p.packed } : p);
-                                const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, packingList: updatedList } : t);
-                                saveTripsToCloud(updatedTrips);
-                              }}
-                              className="flex items-center gap-3.5 cursor-pointer flex-1 select-none"
-                            >
-                              {item.packed ? (
-                                <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0" />
-                              ) : (
-                                <Square className="w-5 h-5 text-[#666] shrink-0" />
-                              )}
-                              <div className="space-y-1">
-                                <div className={`font-bold text-sm sm:text-base transition ${item.packed ? 'line-through text-[#888]' : 'text-[#1A1817]'}`}>
-                                  {item.name} {item.qty > 1 && <span className="text-xs font-semibold text-amber-800 ml-1">× {item.qty}</span>}
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-[#666]">
-                                  <span className="px-2.5 py-0.5 rounded-lg bg-white border border-[#DCD6CC] font-medium">{item.category}</span>
-                                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-100/80 text-amber-900 font-medium">👤 负责：{item.assignee}</span>
-                                </div>
-                              </div>
-                            </div>
+                            + 一键填入参考须知
+                          </button>
+                        )}
+                      </div>
 
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <button 
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newNoticeInput}
+                          onChange={e => setNewNoticeInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (!newNoticeInput.trim()) return;
+                              const nextNotices = [...notices, newNoticeInput.trim()];
+                              const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, preTripNotices: nextNotices } : t);
+                              saveTripsToCloud(updatedTrips);
+                              setNewNoticeInput('');
+                              triggerToast('📌 已添加旅行前须知！');
+                            }
+                          }}
+                          placeholder="输入旅行前须知（例如：提前填好 Visit Japan Web、准备 Suica 卡）..."
+                          className="flex-1 p-2.5 bg-white border border-amber-200 rounded-xl text-xs sm:text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!newNoticeInput.trim()) return;
+                            const nextNotices = [...notices, newNoticeInput.trim()];
+                            const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, preTripNotices: nextNotices } : t);
+                            saveTripsToCloud(updatedTrips);
+                            setNewNoticeInput('');
+                            triggerToast('📌 已添加旅行前须知！');
+                          }}
+                          className="px-4 py-2.5 bg-[#2C2A29] text-white text-xs font-bold rounded-xl hover:bg-[#444] shrink-0"
+                        >
+                          + 添加须知
+                        </button>
+                      </div>
+
+                      {notices.length > 0 && (
+                        <div className="space-y-2">
+                          {notices.map((notice, nIdx) => (
+                            <div key={nIdx} className="bg-white/90 px-4 py-3 rounded-2xl border border-amber-200 flex items-center justify-between gap-3">
+                              <span className="text-xs sm:text-sm text-[#2C2A29] font-medium flex items-start gap-2">
+                                <span className="text-amber-700 font-bold">•</span>
+                                <span>{notice}</span>
+                              </span>
+                              <button
+                                type="button"
                                 onClick={() => {
-                                  setEditingItem(item);
-                                  setPackingForm({ name: item.name, category: item.category, assignee: item.assignee, qty: item.qty || 1 });
-                                  setModalType('editPacking');
-                                }}
-                                className="text-gray-600 hover:text-amber-700 p-2 bg-white rounded-xl border border-[#DCD6CC]"
-                                title="编辑物品"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button 
-                                onClick={() => requestDelete(() => {
-                                  const updatedList = list.filter(p => p.id !== item.id);
-                                  const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, packingList: updatedList } : t);
+                                  const nextNotices = notices.filter((_, idx) => idx !== nIdx);
+                                  const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, preTripNotices: nextNotices } : t);
                                   saveTripsToCloud(updatedTrips);
-                                }, item.name)}
-                                className="text-gray-500 hover:text-red-600 p-2 bg-white rounded-xl border border-[#DCD6CC]"
-                                title="删除物品"
+                                  triggerToast('🗑️ 已移除该条旅行前须知');
+                                }}
+                                className="text-gray-400 hover:text-rose-600 p-1 rounded-lg shrink-0"
+                                title="删除此须知"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
-                          </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* To Pack List */}
+                    <div className="space-y-6 pt-2 border-t border-[#DCD6CC]">
+                      <div className="flex justify-between items-center flex-wrap gap-4">
+                        <div>
+                          <h3 className="text-xl font-bold tracking-tight">To Pack List（行李清单与打勾勾选）</h3>
+                          <p className="text-xs text-[#777] mt-0.5">点击方框即可打勾标记“已打包”，支持分配负责人并实时同步</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setEditingItem(null);
+                            setPackingForm({ name: '', category: '证件与钱财', assignee: '全员各自携带', qty: 1 });
+                            setModalType('packing');
+                          }}
+                          className="px-4 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-medium flex items-center gap-1.5 shadow-sm hover:bg-[#444]"
+                        >
+                          <Plus className="w-4 h-4" /> 添加行李物品
+                        </button>
+                      </div>
+
+                      <div className="p-6 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold text-[#1A1817]">🧳 当前行李打包完成度</span>
+                          <span className="text-sm font-extrabold text-emerald-700">
+                            {packedCount} / {totalCount} 项已完成 ({progressPct}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-3 bg-white rounded-full overflow-hidden border border-[#DCD6CC]">
+                          <div 
+                            className="h-full bg-emerald-600 transition-all duration-500 rounded-full"
+                            style={{ width: `${progressPct}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#DCD6CC]">
+                        {categories.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => setPackingFilter(cat)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                              packingFilter === cat ? 'bg-[#2C2A29] text-white shadow-sm' : 'bg-[#E2DCD2] text-[#555] hover:bg-[#D6CEC2]'
+                            }`}
+                          >
+                            {cat}
+                          </button>
                         ))}
                       </div>
-                    )}
+
+                      {filteredList.length === 0 ? (
+                        <div className="p-10 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] text-center text-sm text-[#777]">
+                          该分类下暂无行李物品，点击右上角“添加行李物品”开始准备吧！
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {filteredList.map(item => (
+                            <div 
+                              key={item.id} 
+                              className={`p-4 rounded-2xl border transition flex items-center justify-between gap-4 ${
+                                item.packed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-[#ECE7DF] border-[#DCD6CC]'
+                              }`}
+                            >
+                              <div 
+                                onClick={() => {
+                                  const updatedList = list.map(p => p.id === item.id ? { ...p, packed: !p.packed } : p);
+                                  const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, packingList: updatedList } : t);
+                                  saveTripsToCloud(updatedTrips);
+                                }}
+                                className="flex items-center gap-3.5 cursor-pointer flex-1 select-none"
+                              >
+                                {item.packed ? (
+                                  <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0" />
+                                ) : (
+                                  <Square className="w-5 h-5 text-[#666] shrink-0" />
+                                )}
+                                <div className="space-y-1">
+                                  <div className={`font-bold text-sm sm:text-base transition ${item.packed ? 'line-through text-[#888]' : 'text-[#1A1817]'}`}>
+                                    {item.name} {item.qty > 1 && <span className="text-xs font-semibold text-amber-800 ml-1">× {item.qty}</span>}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2 text-xs text-[#666]">
+                                    <span className="px-2.5 py-0.5 rounded-lg bg-white border border-[#DCD6CC] font-medium">{item.category}</span>
+                                    <span className="px-2.5 py-0.5 rounded-lg bg-amber-100/80 text-amber-900 font-medium">👤 负责：{item.assignee}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button 
+                                  onClick={() => {
+                                    setEditingItem(item);
+                                    setPackingForm({ name: item.name, category: item.category, assignee: item.assignee, qty: item.qty || 1 });
+                                    setModalType('editPacking');
+                                  }}
+                                  className="text-gray-600 hover:text-amber-700 p-2 bg-white rounded-xl border border-[#DCD6CC]"
+                                  title="编辑物品"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button 
+                                  onClick={() => requestDelete(() => {
+                                    const updatedList = list.filter(p => p.id !== item.id);
+                                    const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, packingList: updatedList } : t);
+                                    saveTripsToCloud(updatedTrips);
+                                  }, item.name)}
+                                  className="text-gray-500 hover:text-red-600 p-2 bg-white rounded-xl border border-[#DCD6CC]"
+                                  title="删除物品"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })()}
 
-              {/* Tab 3: 智能推荐景点 (小红书热榜) */}
+              {/* Tab 3: 智能推荐景点 */}
               {activeTab === 'recommendations' && (
                 <div className="mt-8 space-y-6">
                   <div className="flex justify-between items-center flex-wrap gap-4">
@@ -1241,7 +1621,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab 5: 分天天气与智能建议 (动态绑定行程) */}
+              {/* Tab 5: 分天天气与智能建议 */}
               {activeTab === 'weather' && (
                 <div className="mt-8 space-y-6">
                   <div>
@@ -1360,7 +1740,6 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* 消费总览与每人垫付统计 */}
                   {currentTrip.expenses && currentTrip.expenses.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="p-5 rounded-3xl bg-[#ECE7DF] border border-[#DCD6CC] space-y-1">
@@ -1389,7 +1768,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 智能结账清算方案 */}
                   {currentTrip.expenses && currentTrip.expenses.length > 0 && (
                     <div className="p-6 rounded-3xl bg-amber-50/70 border border-amber-200 space-y-4">
                       <div className="flex items-center gap-2">
@@ -1420,7 +1798,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 所有记账明细清单 */}
                   <div className="space-y-3 pt-2">
                     <h4 className="font-bold text-sm text-[#444]">所有记账明细清单：</h4>
                     {(!currentTrip.expenses || currentTrip.expenses.length === 0) ? (
@@ -1613,6 +1990,53 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-[#DCD6CC] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             
+            {/* 按同行伙伴专属分享弹窗 */}
+            {modalType === 'shareByPartner' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">👥 按同行伙伴专属聚合分享</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <p className="text-xs text-[#666] leading-relaxed">
+                    选择一位同行伙伴后，系统会自动生成仅限该伙伴的专属链接（<code className="bg-[#ECE7DF] px-1.5 py-0.5 rounded">?partner=姓名</code>）。对方打开链接时，主页将<strong>自动且仅显示所有包含 TA 的旅程</strong>，其他私人旅程完全不可见。
+                  </p>
+                  {allCompanionPartners.length === 0 ? (
+                    <div className="p-6 bg-[#ECE7DF] rounded-2xl text-center text-xs text-[#666]">
+                      暂无其他同行伙伴名单，请先在旅程中添加同行伙伴姓名（如 Alex、Sarah、C）。
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {allCompanionPartners.map(partner => {
+                        const partnerTrips = trips.filter(t => (t.companionNames || []).includes(partner));
+                        return (
+                          <div key={partner} className="p-4 rounded-2xl bg-[#ECE7DF] border border-[#DCD6CC] flex items-center justify-between gap-3">
+                            <div>
+                              <div className="font-bold text-sm text-[#1A1817] flex items-center gap-2">
+                                👤 {partner}
+                                <span className="text-[11px] bg-white px-2 py-0.5 rounded-full border border-[#DCD6CC] text-[#555]">
+                                  共 {partnerTrips.length} 个同行旅程
+                                </span>
+                              </div>
+                              <p className="text-xs text-[#666] mt-1">
+                                可见：{partnerTrips.map(t => t.title).join('、')}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleShareByPartner(partner)}
+                              className="px-4 py-2 bg-[#2C2A29] text-white text-xs font-bold rounded-xl hover:bg-[#444] shrink-0 flex items-center gap-1.5"
+                            >
+                              <Share2 className="w-3.5 h-3.5" /> 复制专属链接
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             {/* 新建旅程 */}
             {modalType === 'newTrip' && (
               <>
@@ -1632,16 +2056,42 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-[#666] block mb-1">开始日期</label>
-                      <input type="date" value={newTripForm.startDate} onChange={e => setNewTripForm({...newTripForm, startDate: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                      <input
+                        type="date"
+                        value={newTripForm.startDate}
+                        onChange={e => {
+                          const nextStart = e.target.value;
+                          const nextEnd = nextStart > newTripForm.endDate ? nextStart : newTripForm.endDate;
+                          const count = calculateTripDayCount(nextStart, nextEnd);
+                          setNewTripForm({ ...newTripForm, startDate: nextStart, endDate: nextEnd });
+                          triggerToast(`📅 已自动检测为 ${count} 天行程 (Day 1 ~ Day ${count})`);
+                        }}
+                        className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm"
+                      />
                     </div>
                     <div>
                       <label className="text-xs text-[#666] block mb-1">结束日期</label>
-                      <input type="date" value={newTripForm.endDate} onChange={e => setNewTripForm({...newTripForm, endDate: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                      <input
+                        type="date"
+                        value={newTripForm.endDate}
+                        onChange={e => {
+                          const nextEnd = e.target.value;
+                          const nextStart = nextEnd < newTripForm.startDate ? nextEnd : newTripForm.startDate;
+                          const count = calculateTripDayCount(nextStart, nextEnd);
+                          setNewTripForm({ ...newTripForm, startDate: nextStart, endDate: nextEnd });
+                          triggerToast(`📅 已自动检测为 ${count} 天行程 (Day 1 ~ Day ${count})`);
+                        }}
+                        className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm"
+                      />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs text-[#666] block mb-1">同行伙伴姓名 (用逗号隔开)</label>
                     <input type="text" value={newTripForm.companionNames.join(', ')} onChange={e => setNewTripForm({...newTripForm, companionNames: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="我, Alex, Sarah" />
+                  </div>
+                  <div className="bg-[#ECE7DF] px-3.5 py-2.5 rounded-xl border border-[#DCD6CC] text-xs text-[#555] flex items-center justify-between">
+                    <span>📅 根据所选日期自动生成行程标签页：</span>
+                    <strong className="text-[#1A1817]">共 {calculateTripDayCount(newTripForm.startDate, newTripForm.endDate)} 天 (Day 1 ~ Day {calculateTripDayCount(newTripForm.startDate, newTripForm.endDate)})</strong>
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
@@ -1649,6 +2099,11 @@ export default function App() {
                       onClick={() => {
                         if (!newTripForm.title.trim()) { triggerToast('⚠️ 请填写旅行标题'); return; }
                         const members = newTripForm.companionNames.length > 0 ? newTripForm.companionNames : ['我'];
+                        const dayCount = calculateTripDayCount(newTripForm.startDate, newTripForm.endDate);
+                        const generatedItinerary = syncItineraryWithDateRange({}, newTripForm.startDate, newTripForm.endDate);
+                        generatedItinerary['Day 1'] = [
+                          { id: 'd1', time: '14:00', title: '抵达与酒店入住', desc: '办理入住并稍作休整，探索周边美食。', transport: '机场快线 / 巴士直达市区', distance: '机场至市区', opening: '全天', mapUrl: 'https://maps.google.com', photo: '', photoRefs: [], shoppingList: [] }
+                        ];
                         const newT = {
                           id: Date.now().toString(),
                           title: newTripForm.title,
@@ -1662,18 +2117,21 @@ export default function App() {
                           dailyWeather: { 'Day 1': { temp: '5°C / -1°C', condition: '晴朗 ☀️', advice: '气候微冷，注意防风保暖。', packing: ['羽绒服', '保暖手套'] } },
                           flights: [], 
                           hotels: [],
-                          itinerary: { 'Day 1': [{ id: 'd1', time: '14:00', title: '抵达与酒店入住', desc: '办理入住并稍作休整，探索周边美食。', transport: '机场快线 / 巴士直达市区', distance: '机场至市区', opening: '全天', mapUrl: 'https://maps.google.com', photo: '' }] },
+                          itinerary: generatedItinerary,
                           masterSpots: [], 
                           expenses: [], 
                           memories: [],
+                          preTripNotices: [],
                           packingList: [
                             { id: 'p_init_1', name: '护照 & 身份证件', category: '证件与钱财', assignee: '全员各自携带', qty: 1, packed: false },
                             { id: 'p_init_2', name: '充电器 & 充电宝', category: '电子数码', assignee: '全员各自携带', qty: 1, packed: false }
                           ]
                         };
                         saveTripsToCloud([newT, ...trips]);
+                        setActiveDayTab('Day 1');
+                        setActiveWeatherDay('Day 1');
                         setModalType(null);
-                        triggerToast('✨ 新旅程已创建并同步至云端！');
+                        triggerToast(`✨ 新旅程已创建，并自动生成 Day 1 ~ Day ${dayCount} 行程页！`);
                       }}
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
@@ -1764,33 +2222,66 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-[#666] block mb-1">开始日期</label>
-                      <input type="date" value={editTripMetaForm.startDate} onChange={e => setEditTripMetaForm({...editTripMetaForm, startDate: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                      <input
+                        type="date"
+                        value={editTripMetaForm.startDate}
+                        onChange={e => {
+                          const nextStart = e.target.value;
+                          const nextEnd = nextStart > editTripMetaForm.endDate ? nextStart : editTripMetaForm.endDate;
+                          setEditTripMetaForm({ ...editTripMetaForm, startDate: nextStart, endDate: nextEnd });
+                          const count = autoApplyDateRangeToTrip(currentTrip.id, nextStart, nextEnd);
+                          triggerToast(`📅 已自动检测为 ${count} 天，每日行程已同步出现 Day 1 ~ Day ${count}`);
+                        }}
+                        className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm"
+                      />
                     </div>
                     <div>
                       <label className="text-xs text-[#666] block mb-1">结束日期</label>
-                      <input type="date" value={editTripMetaForm.endDate} onChange={e => setEditTripMetaForm({...editTripMetaForm, endDate: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                      <input
+                        type="date"
+                        value={editTripMetaForm.endDate}
+                        onChange={e => {
+                          const nextEnd = e.target.value;
+                          const nextStart = nextEnd < editTripMetaForm.startDate ? nextEnd : editTripMetaForm.startDate;
+                          setEditTripMetaForm({ ...editTripMetaForm, startDate: nextStart, endDate: nextEnd });
+                          const count = autoApplyDateRangeToTrip(currentTrip.id, nextStart, nextEnd);
+                          triggerToast(`📅 已自动检测为 ${count} 天，每日行程已同步出现 Day 1 ~ Day ${count}`);
+                        }}
+                        className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm"
+                      />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs text-[#666] block mb-1">同行伙伴姓名 (用逗号隔开)</label>
                     <input type="text" value={editTripMetaForm.companionNames.join(', ')} onChange={e => setEditTripMetaForm({...editTripMetaForm, companionNames: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="我, Alex, Sarah" />
                   </div>
+                  <div className="bg-[#ECE7DF] px-3.5 py-2.5 rounded-xl border border-[#DCD6CC] text-xs text-[#555] flex items-center justify-between">
+                    <span>📅 更改日期后将自动同步行程天数：</span>
+                    <strong className="text-[#1A1817]">共 {calculateTripDayCount(editTripMetaForm.startDate, editTripMetaForm.endDate)} 天 (Day 1 ~ Day {calculateTripDayCount(editTripMetaForm.startDate, editTripMetaForm.endDate)})</strong>
+                  </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
                     <button 
                       onClick={() => {
                         if (!editTripMetaForm.title.trim()) { triggerToast('⚠️ 标题不能为空'); return; }
+                        const dayCount = calculateTripDayCount(editTripMetaForm.startDate, editTripMetaForm.endDate);
+                        const syncedItinerary = syncItineraryWithDateRange(currentTrip.itinerary, editTripMetaForm.startDate, editTripMetaForm.endDate);
                         const updated = trips.map(t => t.id === currentTrip.id ? { 
                           ...t, 
                           title: editTripMetaForm.title, 
                           startDate: editTripMetaForm.startDate, 
                           endDate: editTripMetaForm.endDate, 
                           companions: editTripMetaForm.companionNames.length,
-                          companionNames: editTripMetaForm.companionNames 
+                          companionNames: editTripMetaForm.companionNames,
+                          itinerary: syncedItinerary
                         } : t);
+                        if (!syncedItinerary[activeDayTab]) {
+                          setActiveDayTab('Day 1');
+                          setActiveWeatherDay('Day 1');
+                        }
                         saveTripsToCloud(updated);
                         setModalType(null);
-                        triggerToast('✨ 旅程信息已实时同步！');
+                        triggerToast(`✨ 旅程信息与 Day 1 ~ Day ${dayCount} 行程标签页已自动同步！`);
                       }}
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
@@ -1972,9 +2463,259 @@ export default function App() {
                     <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
                     <button 
                       onClick={() => {
+                        if (!itineraryForm.title.trim()) { triggerToast('⚠️ 请填写景点/地点名称'); return; }
+                        if (modalType === 'itinerary') {
+                          const newItem = { id: Date.now().toString(), ...itineraryForm };
+                          const updatedDayList = [...(currentTrip.itinerary[activeDayTab] || []), newItem];
+                          const updatedItinerary = { ...currentTrip.itinerary, [activeDayTab]: updatedDayList };
+                          const updated = trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t);
+                          saveTripsToCloud(updated);
+                          triggerToast('✨ 新行程已保存并同步！');
+                        } else {
+                          const updatedItinerary = { ...currentTrip.itinerary };
+                          if (editingItem.day !== activeDayTab) {
+                            updatedItinerary[editingItem.day] = updatedItinerary[editingItem.day].filter((_, i) => i !== editingItem.index);
+                            updatedItinerary[activeDayTab] = [...(updatedItinerary[activeDayTab] || []), { ...itineraryForm }];
+                          } else {
+                            updatedItinerary[activeDayTab] = updatedItinerary[activeDayTab].map((it, i) => i === editingItem.index ? { ...it, ...itineraryForm } : it);
+                          }
+                          const updated = trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t);
+                          saveTripsToCloud(updated);
+                          triggerToast('✏️ 行程修改已保存！');
+                        }
+                        setModalType(null);
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      保存行程
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 景点照片更换 */}
+            {modalType === 'spotPhoto' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">📸 添加/更换景点照片</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">上传本地照片</label>
+                    <input type="file" accept="image/*" onChange={e => handleLocalImageUpload(e, url => setSpotPhotoForm({ url }))} className="w-full text-xs p-2.5 border border-[#DCD6CC] rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">或输入图片链接 (URL)</label>
+                    <input type="text" value={spotPhotoForm.url} onChange={e => setSpotPhotoForm({ url: e.target.value })} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://..." />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        const updatedDayList = currentTrip.itinerary[editingItem.day].map((it, i) => i === editingItem.index ? { ...it, photo: spotPhotoForm.url } : it);
+                        const updatedItinerary = { ...currentTrip.itinerary, [editingItem.day]: updatedDayList };
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, itinerary: updatedItinerary } : t);
+                        saveTripsToCloud(updated);
+                        setModalType(null);
+                        triggerToast('📸 景点照片已更新！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      确认保存
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 航班添加/编辑 */}
+            {(modalType === 'flight' || modalType === 'editFlight') && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">✈️ 航班信息</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">类型</label>
+                    <select value={flightForm.type} onChange={e => setFlightForm({...flightForm, type: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
+                      <option value="去程">去程</option>
+                      <option value="回程">回程</option>
+                      <option value="中转/内陆">中转/内陆</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">航班号</label>
+                    <input type="text" value={flightForm.flightNo} onChange={e => setFlightForm({...flightForm, flightNo: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="JL 0724" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">日期</label>
+                      <input type="date" value={flightForm.date} onChange={e => setFlightForm({...flightForm, date: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">起降时间</label>
+                      <input type="text" value={flightForm.time} onChange={e => setFlightForm({...flightForm, time: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="09:15 -> 17:30" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">航线</label>
+                    <input type="text" value={flightForm.route} onChange={e => setFlightForm({...flightForm, route: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="吉隆坡 (KUL) -> 东京成田 (NRT)" />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!flightForm.flightNo.trim()) { triggerToast('⚠️ 请填写航班号'); return; }
+                        const list = currentTrip.flights || [];
+                        const updatedFlights = modalType === 'flight'
+                          ? [...list, { id: Date.now().toString(), ...flightForm }]
+                          : list.map((f, i) => i === editingItem.index ? { ...f, ...flightForm } : f);
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, flights: updatedFlights } : t);
+                        saveTripsToCloud(updated);
+                        setModalType(null);
+                        triggerToast('✈️ 航班信息已保存！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      保存航班
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 酒店添加/编辑 */}
+            {(modalType === 'hotel' || modalType === 'editHotel') && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">🏨 酒店住宿信息</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">酒店名称</label>
+                    <input type="text" value={hotelForm.name} onChange={e => setHotelForm({...hotelForm, name: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">酒店地址</label>
+                    <input type="text" value={hotelForm.address} onChange={e => setHotelForm({...hotelForm, address: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">入住日期</label>
+                      <input type="date" value={hotelForm.checkIn} onChange={e => setHotelForm({...hotelForm, checkIn: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">退房日期</label>
+                      <input type="date" value={hotelForm.checkOut} onChange={e => setHotelForm({...hotelForm, checkOut: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!hotelForm.name.trim()) { triggerToast('⚠️ 请填写酒店名称'); return; }
+                        const list = currentTrip.hotels || [];
+                        const updatedHotels = modalType === 'hotel'
+                          ? [...list, { id: Date.now().toString(), ...hotelForm }]
+                          : list.map((h, i) => i === editingItem.index ? { ...h, ...hotelForm } : h);
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, hotels: updatedHotels } : t);
+                        saveTripsToCloud(updated);
+                        setModalType(null);
+                        triggerToast('🏨 酒店信息已保存！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      保存酒店
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 记账弹窗 */}
+            {modalType === 'expense' && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">💰 多币种记账与 AA 分摊</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">消费项目</label>
+                    <input type="text" value={expenseForm.title} onChange={e => setExpenseForm({...expenseForm, title: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="例如：一兰拉面晚餐" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">金额</label>
+                      <input type="number" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="100" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">币种</label>
+                      <select value={expenseForm.currency} onChange={e => setExpenseForm({...expenseForm, currency: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
+                        <option value="MYR">MYR (RM)</option>
+                        <option value="JPY">JPY (日元)</option>
+                        <option value="CNY">CNY (人民币)</option>
+                        <option value="USD">USD (美元)</option>
+                        <option value="SGD">SGD (新币)</option>
+                        <option value="THB">THB (泰铢)</option>
+                        <option value="KRW">KRW (韩元)</option>
+                        <option value="EUR">EUR (欧元)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">付款垫付人</label>
+                      <select value={expenseForm.paidBy} onChange={e => setExpenseForm({...expenseForm, paidBy: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
+                        {(currentTrip.companionNames || ['我', 'Alex', 'Sarah']).map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">消费类别</label>
+                      <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm">
+                        <option value="餐饮">餐饮</option>
+                        <option value="交通">交通</option>
+                        <option value="住宿">住宿</option>
+                        <option value="门票">门票</option>
+                        <option value="购物">购物</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1.5">参与平分伙伴</label>
+                    <div className="flex flex-wrap gap-2">
+                      {(currentTrip.companionNames || ['我', 'Alex', 'Sarah']).map(m => {
+                        const checked = expenseForm.splitAmong.includes(m);
+                        return (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => {
+                              const next = checked
+                                ? expenseForm.splitAmong.filter(x => x !== m)
+                                : [...expenseForm.splitAmong, m];
+                              setExpenseForm({ ...expenseForm, splitAmong: next });
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                              checked ? 'bg-[#2C2A29] text-white border-[#2C2A29]' : 'bg-[#ECE7DF] text-[#555] border-[#DCD6CC]'
+                            }`}
+                          >
+                            {checked ? '✓ ' : ''}{m}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
                         if (!expenseForm.title.trim() || !expenseForm.amount) { triggerToast('⚠️ 请填写消费名称与金额'); return; }
                         if (expenseForm.splitAmong.length === 0) { triggerToast('⚠️ 请至少选择一位分摊伙伴'); return; }
-                        
                         const convertedRM = convertToRM(expenseForm.amount, expenseForm.currency);
                         const newExp = { 
                           id: Date.now().toString(), 
@@ -1988,7 +2729,7 @@ export default function App() {
                           splitAmong: expenseForm.splitAmong,
                           customShares: expenseForm.customShares
                         };
-                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, expenses: [...t.expenses, newExp] } : t);
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, expenses: [...(t.expenses || []), newExp] } : t);
                         saveTripsToCloud(updated);
                         setModalType(null);
                         triggerToast('💰 记账已同步，AA清算已更新！');
@@ -1996,6 +2737,59 @@ export default function App() {
                       className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
                     >
                       确认记账
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 回忆相册添加/编辑 */}
+            {(modalType === 'memory' || modalType === 'editMemory') && (
+              <>
+                <div className="flex justify-between items-center border-b border-[#DCD6CC] pb-4">
+                  <h3 className="font-bold text-lg">📸 旅途回忆相册</h3>
+                  <button onClick={() => setModalType(null)} className="p-1 rounded-full hover:bg-gray-100"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">上传本地照片</label>
+                    <input type="file" accept="image/*" onChange={e => handleLocalImageUpload(e, url => setMemoryForm({ ...memoryForm, url }))} className="w-full text-xs p-2.5 border border-[#DCD6CC] rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">或输入图片链接 (URL)</label>
+                    <input type="text" value={memoryForm.url} onChange={e => setMemoryForm({ ...memoryForm, url: e.target.value })} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="https://..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">日期</label>
+                      <input type="date" value={memoryForm.date} onChange={e => setMemoryForm({ ...memoryForm, date: e.target.value })} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#666] block mb-1">拍摄地点</label>
+                      <input type="text" value={memoryForm.location} onChange={e => setMemoryForm({ ...memoryForm, location: e.target.value })} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="新宿歌舞伎町" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#666] block mb-1">心情/故事记录</label>
+                    <textarea value={memoryForm.comment} onChange={e => setMemoryForm({ ...memoryForm, comment: e.target.value })} className="w-full p-3 border border-[#DCD6CC] rounded-xl text-sm" placeholder="写下这一刻的心情..." />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setModalType(null)} className="px-5 py-2.5 bg-gray-100 text-xs rounded-xl font-medium">取消</button>
+                    <button 
+                      onClick={() => {
+                        if (!memoryForm.url.trim()) { triggerToast('⚠️ 请上传或填写照片链接'); return; }
+                        const list = currentTrip.memories || [];
+                        const updatedMemories = modalType === 'memory'
+                          ? [{ id: Date.now().toString(), ...memoryForm }, ...list]
+                          : list.map((m, i) => i === editingItem.index ? { ...m, ...memoryForm } : m);
+                        const updated = trips.map(t => t.id === currentTrip.id ? { ...t, memories: updatedMemories } : t);
+                        saveTripsToCloud(updated);
+                        setModalType(null);
+                        triggerToast('📸 回忆相册已更新！');
+                      }}
+                      className="px-6 py-2.5 bg-[#2C2A29] text-white text-xs rounded-xl font-bold"
+                    >
+                      保存回忆
                     </button>
                   </div>
                 </div>
